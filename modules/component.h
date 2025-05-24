@@ -9,6 +9,7 @@ protected:
 	int id;
 	std::string name;
 	std::string type;
+	bool active = true;
 };
 }
 

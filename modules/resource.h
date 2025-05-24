@@ -7,14 +7,10 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "misc/cpp/imgui_stdlib.h"
-
 #include "tiny_gltf.h"
 
 namespace ikhanchoi {
@@ -24,20 +20,22 @@ protected:
 	int id; // id counted for each type
 	std::string name; // path after ../assets/models/ or ../assets/shaders/
 	std::type_index type;
+	bool active = true;
 
 	Resource(int id, std::string name, const std::type_index& type)
 		: id(id), name(std::move(name)), type(type) {}
 
 public:
 	virtual ~Resource() = default;
-
 	void setId(int id) { this->id = id; }
 	void setName(const std::string& name) { this->name = name; }
 	void setType(const std::type_index& type) { this->type = type; }
-
-	int getId() { return id; }
-	const std::string& getName() { return name; }
-	const std::type_index& getType() { return type; }
+	void setActive(bool active) { this->active = active; }
+	int getId() const { return id; }
+	const std::string& getName() const { return name; }
+	const std::type_index& getType() const { return type; }
+	bool isActive() const { return active; }
+	virtual void show() = 0;
 };
 
 
@@ -62,6 +60,8 @@ public:
 	void loadModel();
 	void loadBufferObjects();
 	void loadTextureObjects();
+
+	void show() override;
 };
 
 class ShaderResource : public Resource {
@@ -77,10 +77,10 @@ public:
 	GLuint getShader() { return shader; }
 
 	void loadShader();
+
+	void show() override;
+
 };
-
-
-
 
 
 

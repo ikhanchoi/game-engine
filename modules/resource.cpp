@@ -1,15 +1,15 @@
 #include <fstream>
 #include <iostream>
 
+#include "resource.h"
+
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 
-#include "resource.h"
-
 namespace ikhanchoi {
 
-static const std::unordered_map<std::type_index, std::string> typeNames
+static const std::unordered_map<std::type_index, std::string> resourceTypeNames
 	= {{typeid(ModelResource), "Model"},
 	   {typeid(ShaderResource), "Shader"}};
 
@@ -65,6 +65,23 @@ void ModelResource::loadTextureObjects() {
 	}
 }
 
+void ModelResource::show() {
+	ImGui::PushID(this);
+	ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+	bool open = ImGui::CollapsingHeader((name + " (id: " + std::to_string(id) + ")").c_str());
+	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+		std::tuple<std::type_index, ModelResource*> payload = {type, this};
+		ImGui::SetDragDropPayload("ModelResource", &payload, sizeof(payload));
+		ImGui::Text("Put it into render component: %s", name.c_str());
+		ImGui::EndDragDropSource();
+	}
+	if (open) { // TODO: add more information for each buffer and texture objects.
+		ImGui::Checkbox("active", &active);
+		ImGui::Text("number of buffer objects: %d", (int) bufferObjects.size());
+		ImGui::Text("number of texture objects: %d", (int) textureObjects.size());
+	}
+	ImGui::PopID();
+}
 
 
 ShaderResource::~ShaderResource() {
@@ -106,7 +123,22 @@ void ShaderResource::loadShader() {
 	}
 }
 
-
+void ShaderResource::show() {
+	ImGui::PushID(this);
+	ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+	bool open = ImGui::CollapsingHeader((name + " (id: " + std::to_string(id) + ")").c_str());
+	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
+		std::tuple<std::type_index, ShaderResource*> payload = {type, this};
+		ImGui::SetDragDropPayload("ShaderResource", &payload, sizeof(payload));
+		ImGui::Text("Put it into render component: %s", name.c_str());
+		ImGui::EndDragDropSource();
+	}
+	if (open) {
+		ImGui::Checkbox("active", &active);
+		ImGui::Text("shader id: %d", shader);
+	}
+	ImGui::PopID();
+}
 
 
 
@@ -115,22 +147,14 @@ void ResourceManager::show() {
 	ImGui::PushID(this);
 	ImGui::Begin("Resource manager");
 	ImGui::BeginTabBar("Resources", ImGuiTabBarFlags_::ImGuiTabBarFlags_Reorderable);
-	for (const auto& [type, typeName] : typeNames) {
+	for (const auto& [type, typeName] : resourceTypeNames) {
 		ImGui::PushID(type.name());
 		if (ImGui::BeginTabItem((typeName + "s").c_str())) {
 			for (const auto &resource: resources[type]) {
-				if (resource == nullptr) continue;
-				ImGui::PushID(&resource);
-				std::string label = resource->getName();
-				ImGui::Button(label.c_str(), ImVec2(50.0f, 50.0f));
-				if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-					std::tuple<std::type_index, std::shared_ptr<Resource>> payload = {type, resource};
-					ImGui::SetDragDropPayload("Resource", &payload, sizeof(payload));
-					ImGui::Text("Put it into render component: %s", label.c_str());
-					ImGui::EndDragDropSource();
-				}
-				ImGui::SameLine();
-				ImGui::PopID();
+				if (resource == nullptr)
+					continue;
+				else
+					resource->show();
 			}
 			ImGui::EndTabItem();
 		}

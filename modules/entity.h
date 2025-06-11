@@ -17,35 +17,47 @@ namespace ikhanchoi {
 
 class Entity {
 protected:
-	int id; // id counted for each type
+	unsigned int id;// id counted for each type
 	std::string name;
 	std::type_index type;
 	bool active = true;
 
-
-	std::unordered_map<std::type_index, std::unique_ptr<Component>> component;
-
-	Entity(int id, std::string name, const std::type_index& type)
-		: id(id), name(std::move(name)), type(type) {}
+	std::unordered_map<std::type_index, std::unique_ptr<Component>> component;// shared by only one entity
+	std::vector<std::shared_ptr<Entity>> children;
+	std::shared_ptr<Entity> parent = nullptr;
 
 public:
+	explicit Entity(unsigned int id, std::string name, const std::type_index &type)
+		: id(id), name(std::move(name)), type(type) {}
 	virtual ~Entity() = default;
-	void setId(int id) { this->id = id; }
-	void setName(const std::string& name) { this->name = name; }
-	void setType(const std::type_index& type) { this->type = type; }
+
+	void setId(unsigned int id) { this->id = id; }
+	void setName(const std::string &name) { this->name = name; }
+	void setType(const std::type_index &type) { this->type = type; }
 	void setActive(bool active) { this->active = active; }
-	int getId() const { return id; }
-	const std::string& getName() const { return name; }
-	const std::type_index& getType() const { return type; }
+	unsigned int getId() const { return id; }
+	const std::string &getName() const { return name; }
+	const std::type_index &getType() const { return type; }
 	bool isActive() const { return active; }
+
 	virtual void update() = 0;
 	virtual void show() = 0;
+
+	void setComponent();
+};
+
+
+class EntityManager {
+private:
+	std::vector<std::unique_ptr<Entity>> entities; // top entities
+public:
+
+
 
 };
 
 
 
 }
-
 
 #endif//GAME_ENGINE_ENTITY_H

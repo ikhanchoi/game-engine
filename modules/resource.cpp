@@ -2,17 +2,14 @@
 #include <iostream>
 #include <sstream>
 
-#include "resource.h"
-
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 
+#include "resource.h"
+
 namespace ikhanchoi {
 
-static const std::unordered_map<std::type_index, std::string> resourceTypeNames
-	= {{typeid(ModelResource), "Model"},
-	   {typeid(ShaderResource), "Shader"}};
 
 ModelResource::~ModelResource() {
 	for (const auto &bufferObject: bufferObjects) {
@@ -143,27 +140,5 @@ void ShaderResource::show() {
 
 
 
-
-void ResourceManager::show() {
-	ImGui::PushID(this);
-	ImGui::Begin("Resource manager");
-	ImGui::BeginTabBar("Resources", ImGuiTabBarFlags_::ImGuiTabBarFlags_Reorderable);
-	for (const auto& [type, typeName] : resourceTypeNames) {
-		ImGui::PushID(type.name());
-		if (ImGui::BeginTabItem((typeName + "s").c_str())) {
-			for (const auto &resource: resources[type]) {
-				if (resource == nullptr)
-					continue;
-				else
-					resource->show();
-			}
-			ImGui::EndTabItem();
-		}
-		ImGui::PopID();
-	}
-	ImGui::EndTabBar();
-	ImGui::End();
-	ImGui::PopID();
-}
 
 }

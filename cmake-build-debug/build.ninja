@@ -51,56 +51,56 @@ build cmake_object_order_depends_target_imgui: phony || CMakeFiles/imgui.dir
 
 build CMakeFiles/imgui.dir/include/imgui/imgui.cpp.o: CXX_COMPILER__imgui_unscanned_Debug /Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/imgui.cpp || cmake_object_order_depends_target_imgui
   DEP_FILE = CMakeFiles/imgui.dir/include/imgui/imgui.cpp.o.d
-  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics
   INCLUDES = -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/backends -isystem /opt/homebrew/include
   OBJECT_DIR = CMakeFiles/imgui.dir
   OBJECT_FILE_DIR = CMakeFiles/imgui.dir/include/imgui
 
 build CMakeFiles/imgui.dir/include/imgui/imgui_demo.cpp.o: CXX_COMPILER__imgui_unscanned_Debug /Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/imgui_demo.cpp || cmake_object_order_depends_target_imgui
   DEP_FILE = CMakeFiles/imgui.dir/include/imgui/imgui_demo.cpp.o.d
-  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics
   INCLUDES = -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/backends -isystem /opt/homebrew/include
   OBJECT_DIR = CMakeFiles/imgui.dir
   OBJECT_FILE_DIR = CMakeFiles/imgui.dir/include/imgui
 
 build CMakeFiles/imgui.dir/include/imgui/imgui_draw.cpp.o: CXX_COMPILER__imgui_unscanned_Debug /Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/imgui_draw.cpp || cmake_object_order_depends_target_imgui
   DEP_FILE = CMakeFiles/imgui.dir/include/imgui/imgui_draw.cpp.o.d
-  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics
   INCLUDES = -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/backends -isystem /opt/homebrew/include
   OBJECT_DIR = CMakeFiles/imgui.dir
   OBJECT_FILE_DIR = CMakeFiles/imgui.dir/include/imgui
 
 build CMakeFiles/imgui.dir/include/imgui/imgui_tables.cpp.o: CXX_COMPILER__imgui_unscanned_Debug /Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/imgui_tables.cpp || cmake_object_order_depends_target_imgui
   DEP_FILE = CMakeFiles/imgui.dir/include/imgui/imgui_tables.cpp.o.d
-  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics
   INCLUDES = -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/backends -isystem /opt/homebrew/include
   OBJECT_DIR = CMakeFiles/imgui.dir
   OBJECT_FILE_DIR = CMakeFiles/imgui.dir/include/imgui
 
 build CMakeFiles/imgui.dir/include/imgui/imgui_widgets.cpp.o: CXX_COMPILER__imgui_unscanned_Debug /Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/imgui_widgets.cpp || cmake_object_order_depends_target_imgui
   DEP_FILE = CMakeFiles/imgui.dir/include/imgui/imgui_widgets.cpp.o.d
-  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics
   INCLUDES = -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/backends -isystem /opt/homebrew/include
   OBJECT_DIR = CMakeFiles/imgui.dir
   OBJECT_FILE_DIR = CMakeFiles/imgui.dir/include/imgui
 
 build CMakeFiles/imgui.dir/include/imgui/backends/imgui_impl_glfw.cpp.o: CXX_COMPILER__imgui_unscanned_Debug /Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/backends/imgui_impl_glfw.cpp || cmake_object_order_depends_target_imgui
   DEP_FILE = CMakeFiles/imgui.dir/include/imgui/backends/imgui_impl_glfw.cpp.o.d
-  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics
   INCLUDES = -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/backends -isystem /opt/homebrew/include
   OBJECT_DIR = CMakeFiles/imgui.dir
   OBJECT_FILE_DIR = CMakeFiles/imgui.dir/include/imgui/backends
 
 build CMakeFiles/imgui.dir/include/imgui/backends/imgui_impl_opengl3.cpp.o: CXX_COMPILER__imgui_unscanned_Debug /Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/backends/imgui_impl_opengl3.cpp || cmake_object_order_depends_target_imgui
   DEP_FILE = CMakeFiles/imgui.dir/include/imgui/backends/imgui_impl_opengl3.cpp.o.d
-  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics
   INCLUDES = -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/backends -isystem /opt/homebrew/include
   OBJECT_DIR = CMakeFiles/imgui.dir
   OBJECT_FILE_DIR = CMakeFiles/imgui.dir/include/imgui/backends
 
 build CMakeFiles/imgui.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.o: CXX_COMPILER__imgui_unscanned_Debug /Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/misc/cpp/imgui_stdlib.cpp || cmake_object_order_depends_target_imgui
   DEP_FILE = CMakeFiles/imgui.dir/include/imgui/misc/cpp/imgui_stdlib.cpp.o.d
-  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics
   INCLUDES = -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/backends -isystem /opt/homebrew/include
   OBJECT_DIR = CMakeFiles/imgui.dir
   OBJECT_FILE_DIR = CMakeFiles/imgui.dir/include/imgui/misc/cpp
@@ -133,28 +133,28 @@ build cmake_object_order_depends_target_modules: phony || cmake_object_order_dep
 
 build CMakeFiles/modules.dir/modules/resource.cpp.o: CXX_COMPILER__modules_unscanned_Debug /Users/ikhanchoi/Desktop/Git/game-engine/modules/resource.cpp || cmake_object_order_depends_target_modules
   DEP_FILE = CMakeFiles/modules.dir/modules/resource.cpp.o.d
-  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics -F/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/System/Library/Frameworks
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics -F/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/System/Library/Frameworks
   INCLUDES = -I/Users/ikhanchoi/Desktop/Git/game-engine/modules -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/backends -I/Users/ikhanchoi/Desktop/Git/game-engine/include/tiny_gltf -isystem /opt/homebrew/include
   OBJECT_DIR = CMakeFiles/modules.dir
   OBJECT_FILE_DIR = CMakeFiles/modules.dir/modules
 
 build CMakeFiles/modules.dir/modules/component.cpp.o: CXX_COMPILER__modules_unscanned_Debug /Users/ikhanchoi/Desktop/Git/game-engine/modules/component.cpp || cmake_object_order_depends_target_modules
   DEP_FILE = CMakeFiles/modules.dir/modules/component.cpp.o.d
-  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics -F/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/System/Library/Frameworks
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics -F/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/System/Library/Frameworks
   INCLUDES = -I/Users/ikhanchoi/Desktop/Git/game-engine/modules -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/backends -I/Users/ikhanchoi/Desktop/Git/game-engine/include/tiny_gltf -isystem /opt/homebrew/include
   OBJECT_DIR = CMakeFiles/modules.dir
   OBJECT_FILE_DIR = CMakeFiles/modules.dir/modules
 
 build CMakeFiles/modules.dir/modules/entity.cpp.o: CXX_COMPILER__modules_unscanned_Debug /Users/ikhanchoi/Desktop/Git/game-engine/modules/entity.cpp || cmake_object_order_depends_target_modules
   DEP_FILE = CMakeFiles/modules.dir/modules/entity.cpp.o.d
-  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics -F/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/System/Library/Frameworks
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics -F/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/System/Library/Frameworks
   INCLUDES = -I/Users/ikhanchoi/Desktop/Git/game-engine/modules -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/backends -I/Users/ikhanchoi/Desktop/Git/game-engine/include/tiny_gltf -isystem /opt/homebrew/include
   OBJECT_DIR = CMakeFiles/modules.dir
   OBJECT_FILE_DIR = CMakeFiles/modules.dir/modules
 
 build CMakeFiles/modules.dir/modules/window.cpp.o: CXX_COMPILER__modules_unscanned_Debug /Users/ikhanchoi/Desktop/Git/game-engine/modules/window.cpp || cmake_object_order_depends_target_modules
   DEP_FILE = CMakeFiles/modules.dir/modules/window.cpp.o.d
-  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics -F/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/System/Library/Frameworks
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics -F/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/System/Library/Frameworks
   INCLUDES = -I/Users/ikhanchoi/Desktop/Git/game-engine/modules -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/backends -I/Users/ikhanchoi/Desktop/Git/game-engine/include/tiny_gltf -isystem /opt/homebrew/include
   OBJECT_DIR = CMakeFiles/modules.dir
   OBJECT_FILE_DIR = CMakeFiles/modules.dir/modules
@@ -187,7 +187,7 @@ build cmake_object_order_depends_target_game_engine: phony || cmake_object_order
 
 build CMakeFiles/game_engine.dir/src/main.cpp.o: CXX_COMPILER__game_engine_unscanned_Debug /Users/ikhanchoi/Desktop/Git/game-engine/src/main.cpp || cmake_object_order_depends_target_game_engine
   DEP_FILE = CMakeFiles/game_engine.dir/src/main.cpp.o.d
-  FLAGS = -g -std=gnu++17 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics -F/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/System/Library/Frameworks
+  FLAGS = -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.5.sdk -mmacosx-version-min=14.1 -fcolor-diagnostics -F/Library/Developer/CommandLineTools/SDKs/MacOSX12.sdk/System/Library/Frameworks
   INCLUDES = -I/Users/ikhanchoi/Desktop/Git/game-engine/modules -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui -I/Users/ikhanchoi/Desktop/Git/game-engine/include/imgui/backends -I/Users/ikhanchoi/Desktop/Git/game-engine/include/tiny_gltf -isystem /opt/homebrew/include
   OBJECT_DIR = CMakeFiles/game_engine.dir
   OBJECT_FILE_DIR = CMakeFiles/game_engine.dir/src

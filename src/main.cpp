@@ -1,6 +1,17 @@
 #include "resource.h"
 #include "window.h"
 
+// setter getter, adder remover, loader unloader, updater shower
+// update internal after set
+/*
+ *
+ *
+ * how to update systematically....
+ * event system: update or add
+ *
+ *
+ */
+
 int main() {
 
 	auto window = new ikhanchoi::Window("GLTF Viewer", 1280, 960);
@@ -10,9 +21,9 @@ int main() {
 
 	window->setResourceManager(resourceManager);
 
-	auto boomBox = resourceManager->addResource<ikhanchoi::ModelResource>("BoomBox/BoomBox.gltf");
-	auto pbrVert = resourceManager->addResource<ikhanchoi::ShaderResource>("pbr.vert");
-	auto pbrFrag = resourceManager->addResource<ikhanchoi::ShaderResource>("pbr.frag");
+	auto boomBox = resourceManager->addResource("BoomBox/BoomBox.gltf", typeid(ikhanchoi::ModelResource));
+	auto pbrVert = resourceManager->addResource("pbr.vert", typeid(ikhanchoi::ShaderResource));
+	auto pbrFrag = resourceManager->addResource("pbr.frag", typeid(ikhanchoi::ShaderResource));
 
 
 

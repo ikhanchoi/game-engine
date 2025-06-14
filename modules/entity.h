@@ -6,53 +6,64 @@
 #include <unordered_map>
 #include <vector>
 
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include "misc/cpp/imgui_stdlib.h"
-
-#include "component.h"
+#include "modules/core.h"
+#include "modules/component.h"
 
 namespace ikhanchoi {
 
-class Entity {
-protected:
-	unsigned int id;// id counted for each type
-	std::string name;
-	std::type_index type;
-	bool active = true;
-
-	std::unordered_map<std::type_index, std::unique_ptr<Component>> component;// shared by only one entity
-	std::vector<std::shared_ptr<Entity>> children;
-	std::shared_ptr<Entity> parent = nullptr;
-
+class Entity : public Object {
+	std::unordered_map<std::type_index, std::unique_ptr<Component>> component; // shared by only one entity
+	std::vector<Entity*> children;
+	Entity* parent = nullptr;
 public:
-	explicit Entity(unsigned int id, std::string name, const std::type_index &type)
-		: id(id), name(std::move(name)), type(type) {}
-	virtual ~Entity() = default;
+	explicit Entity(unsigned int id, const std::string& name) : Object(id, name) {}
+	~Entity() = default;
+	void update(Updater& updater) override { updater.update(*this); }
 
-	void setId(unsigned int id) { this->id = id; }
-	void setName(const std::string &name) { this->name = name; }
-	void setType(const std::type_index &type) { this->type = type; }
-	void setActive(bool active) { this->active = active; }
-	unsigned int getId() const { return id; }
-	const std::string &getName() const { return name; }
-	const std::type_index &getType() const { return type; }
-	bool isActive() const { return active; }
 
-	virtual void update() = 0;
-	virtual void show() = 0;
+	template <typename ComponentType>
+	void setComponent(std::unique_ptr<ComponentType> component) {
+		static_assert(std::is_base_of<Component, ComponentType>::value);
+		if (this->component.find(typeid(ComponentType)) != this->component.end()) {
+			this->component[typeid(ComponentType)]->setActive(false);
+			//this->component[typeid(T)]->setEntity(nullptr);
+		}
+		this->component[typeid(ComponentType)] = std::move(component);
+	}
+	std::unordered_map<std::type_index, std::unique_ptr<Component>>& getComponent() {
+		return component;
+	}
+	template <typename ComponentType>
+	std::shared_ptr<ComponentType> getComponent() {
+		static_assert(std::is_base_of<Component, ComponentType>::value);
 
-	void setComponent();
+	}
+
+
 };
 
 
-class EntityManager {
-private:
+class EntityManager : public Manager {
 	std::vector<std::unique_ptr<Entity>> entities; // top entities
 public:
+	explicit EntityManager(unsigned int id, const std::string& name);
+	~EntityManager() override = default;
+	void update(Updater& updater) override { updater.update(*this); }
 
+	const std::vector<std::unique_ptr<Entity>>& getEntities() { return entities; }
 
+	std::unique_ptr<Entity>& addEntity(const std::string& name) {
+		unsigned int id = entities.size();
+		entities.emplace_back(std::make_unique<Entity>(id, name));
+		return entities.back();
+	}
+
+	void removeEntity(unsigned int id) {
+		if (id < entities.size()) {
+			entities[id]->setActive(false); // mark as inactive
+			entities[id] = nullptr; // remove from the vector
+		}
+	}
 
 };
 

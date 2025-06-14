@@ -1,7 +1,3 @@
-#include <fstream>
-#include <iostream>
-#include <sstream>
-
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -10,31 +6,38 @@
 
 namespace ikhanchoi {
 
+Resource::Resource(unsigned int id, const std::string &name) : Object(id, name) {}
+
+/*---------------*/
+/* ModelResource */
+/*---------------*/
 
 ModelResource::~ModelResource() {
-	for (const auto &bufferObject: bufferObjects) {
+	for (const auto &bufferObject: bufferObjects)
 		glDeleteBuffers(1, &bufferObject);
-	}
-	for (const auto &textureObject: textureObjects) {
+	for (const auto &textureObject: textureObjects)
 		glDeleteTextures(1, &textureObject);
-	}
 }
 
-void ModelResource::loadModel() {
+void ModelResource::loadModel(const std::string& path) {
 	std::string err, warn;
 	bool ret = false;
 	tinygltf::TinyGLTF loader;
 
-	std::string extension = name.substr(name.rfind('.') + 1);
+	std::string extension = path.substr(path.rfind('.') + 1);
 	if (extension == "gltf")
-		ret = loader.LoadASCIIFromFile(&model, &err, &warn, "../assets/models/" + name);
+		ret = loader.LoadASCIIFromFile(&model, &err, &warn, path);
 	else if (extension == "glb")
-		ret = loader.LoadBinaryFromFile(&model, &err, &warn, "../assets/models/" + name);
-	else std::cerr << "Error: (loadModel) Failed to parse model extension. " << extension << '\n';
+		ret = loader.LoadBinaryFromFile(&model, &err, &warn, path);
+	else
+		throw std::runtime_error("Error: (ModelResource::loadModel) Failed to parse model extension: " + extension);
 
-	if (!warn.empty()) std::cout << "Warning: (loadModel) " << warn << '\n';
-	if (!err.empty())  std::cerr << "Error: (loadModel) " << err << '\n';
-	if (!ret)          std::cerr << "Error: (loadModel) Failed to parse gltf file." << '\n';
+	if (!warn.empty())
+		throw std::runtime_error("Warning: (ModelResource::loadModel) " + warn);
+	if (!err.empty())
+		throw std::runtime_error("Error: (ModelResource::loadModel) " + err);
+	if (!ret)
+		throw std::runtime_error("Error: (ModelResource::loadModel) Failed to parse gltf file: " + path);
 }
 
 void ModelResource::loadBufferObjects() {
@@ -63,30 +66,19 @@ void ModelResource::loadTextureObjects() {
 	}
 }
 
-void ModelResource::show() {
-	ImGui::PushID(this);
-	ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-	bool open = ImGui::CollapsingHeader((name + " (id: " + std::to_string(id) + ")").c_str());
-	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-		std::tuple<std::type_index, ModelResource*> payload = {type, this};
-		ImGui::SetDragDropPayload("ModelResource", &payload, sizeof(payload));
-		ImGui::Text("Put it into render component: %s", name.c_str());
-		ImGui::EndDragDropSource();
-	}
-	if (open) { // TODO: add more information for each buffer and texture objects.
-		ImGui::Checkbox("active", &active);
-		ImGui::Text("number of buffer objects: %d", (int) bufferObjects.size());
-		ImGui::Text("number of texture objects: %d", (int) textureObjects.size());
-	}
-	ImGui::PopID();
-}
+
+
+
+/*----------------*/
+/* ShaderResource */
+/*----------------*/
 
 
 ShaderResource::~ShaderResource() {
 	glDeleteShader(shader);
 }
 
-void ShaderResource::loadShader() {
+void ShaderResource::loadShader(const std::string& path) {
 	std::ifstream fs;
 	std::string code;
 	const char* cstr;
@@ -94,22 +86,23 @@ void ShaderResource::loadShader() {
 
 	fs.exceptions(std::ifstream::failbit|std::ifstream::badbit);
 	try {
-		fs.open("../assets/shaders/" + name);
+		fs.open(path);
 		std::stringstream ss;
 		ss << fs.rdbuf();
 		code = ss.str();
 		fs.close();
 	} catch (std::ifstream::failure& err) {
-		std::cerr << "Error: (loadShader) Failed to load shader. " << err.what() << "\n";
+		throw std::runtime_error("Error: (ShaderResource::loadShader) Failed to load shader file: " + path + ". " + err.what());
 	}
 	cstr = code.c_str();
 
-	std::string extension = name.substr(name.rfind('.') + 1);
+	std::string extension = path.substr(path.rfind('.') + 1);
 	if (extension == "vert")
 		shader = glCreateShader(GL_VERTEX_SHADER);
 	else if (extension == "frag")
 		shader = glCreateShader(GL_FRAGMENT_SHADER);
-	else std::cerr << "Error: (loadShader) Failed to parse shader extension. " << extension << '\n';
+	else
+		throw std::runtime_error("Error: (ShaderResource::loadShader) Failed to parse shader extension: " + extension);
 
 	glShaderSource(shader, 1, &cstr, NULL);
 	glCompileShader(shader);
@@ -117,28 +110,18 @@ void ShaderResource::loadShader() {
 	if (!success) {
 		char infoLog[512];
 		glGetShaderInfoLog(shader, 512, NULL, infoLog);
-		std::cerr << "Error: (loadShader) Failed to compile shader. " << infoLog << '\n';
+		throw std::runtime_error("Error: (ShaderResource::loadShader) Failed to compile shader: " + path + ". " + infoLog);
 	}
 }
 
-void ShaderResource::show() {
-	ImGui::PushID(this);
-	ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-	bool open = ImGui::CollapsingHeader((name + " (id: " + std::to_string(id) + ")").c_str());
-	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
-		std::tuple<std::type_index, ShaderResource*> payload = {type, this};
-		ImGui::SetDragDropPayload("ShaderResource", &payload, sizeof(payload));
-		ImGui::Text("Put it into render component: %s", name.c_str());
-		ImGui::EndDragDropSource();
-	}
-	if (open) {
-		ImGui::Checkbox("active", &active);
-		ImGui::Text("shader id: %d", shader);
-	}
-	ImGui::PopID();
-}
 
 
+/*-----------------*/
+/* ResourceManager */
+/*-----------------*/
 
+
+ResourceManager::ResourceManager(unsigned int id, const std::string &name) : Manager(id, name) {}
+ResourceManager::~ResourceManager() = default;
 
 }

@@ -1,51 +1,63 @@
-#include "resource.h"
-#include "window.h"
+// Modules
+#include "modules/core.h"
+#include "modules/resource.h"
+#include "modules/event.h"
+#include "modules/window.h"
+#include "modules/entity.h"
 
-// setter getter, adder remover, loader unloader, updater shower
-// update internal after set
-/*
- *
- *
- * how to update systematically....
- * event system: update or add
- *
- *
- */
+// Systems
+#include "systems/render.h"
+
 
 int main() {
 
-	auto window = new ikhanchoi::Window("GLTF Viewer", 1280, 960);
-	window->initialize();
+	auto context = std::make_unique<ikhanchoi::Context>("GLTF Viewer", 1280, 960);
 
-	auto resourceManager = new ikhanchoi::ResourceManager();
+	// Modules
+	auto windowManager = context->registerManager<ikhanchoi::WindowManager>("Window manager");
+	auto resourceManager = context->registerManager<ikhanchoi::ResourceManager>("Resource manager");
+	auto entityManager = context->registerManager<ikhanchoi::EntityManager>("Entity manager");
 
-	window->setResourceManager(resourceManager);
+	windowManager->registerType<ikhanchoi::Window>("Window");
 
-	auto boomBox = resourceManager->addResource("BoomBox/BoomBox.gltf", typeid(ikhanchoi::ModelResource));
-	auto pbrVert = resourceManager->addResource("pbr.vert", typeid(ikhanchoi::ShaderResource));
-	auto pbrFrag = resourceManager->addResource("pbr.frag", typeid(ikhanchoi::ShaderResource));
+	resourceManager->registerType<ikhanchoi::ModelResource>("Model");
+	resourceManager->registerType<ikhanchoi::ShaderResource>("Shader");
+
+	// entityManager->registerType<ikhanchoi::Entity>("Entity");
 
 
+	// Settings
+
+	auto resourceManagerWindow = windowManager->addWindow("Resource manager", resourceManager);
+	auto entityManagerWindow = windowManager->addWindow("Entity manager", entityManager);
 
 
-	while (!window->shouldClose()) {
+	auto boomBox = resourceManager->addResource<ikhanchoi::ModelResource>("boomBox", "BoomBox/BoomBox.gltf");
+	auto pbrVert = resourceManager->addResource<ikhanchoi::ShaderResource>("pbrVert", "pbr.vert");
+	auto pbrFrag = resourceManager->addResource<ikhanchoi::ShaderResource>("pbrFrag", "pbr.frag");
 
-		window->pollEvents();
 
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+
+	while (!glfwWindowShouldClose(context->getGlfwWindow())) {
+
+		glfwPollEvents();
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-		window->show();
+		windowManager->update();
+
+		glfwSwapBuffers(context->getGlfwWindow());
 
 
-		window->swapBuffers();
+
 	}
 
-	window->terminate();
 
-	delete window;
-	delete resourceManager;
+
 
 	return 0;
 }

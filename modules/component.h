@@ -2,14 +2,23 @@
 #define GAME_ENGINE_COMPONENT_H
 
 #include <string>
+#include <typeindex>
+
+#include "modules/core.h"
+#include "modules/resource.h"
 
 namespace ikhanchoi {
-class Component {
-protected:
-	int id;
-	std::string name;
-	std::string type;
-	bool active = true;
+
+class Component : public Object {
+
+public:
+	virtual void update(Updater& updater) = 0;
+
+};
+
+class RenderComponent : public Component {
+
+
 };
 }
 

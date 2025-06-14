@@ -33,12 +33,23 @@ add_library(modules STATIC
 	modules/resource.cpp
 	modules/component.cpp
 	modules/entity.cpp
-	modules/window.cpp)
+	modules/event.cpp
+	modules/window.cpp
+		modules/core.cpp
+		modules/core.h)
 target_include_directories(modules PUBLIC
-		${CMAKE_CURRENT_SOURCE_DIR}/modules)
+		${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(modules PUBLIC GLEW::GLEW glfw imgui tiny_gltf)
+
+# systems
+add_library(systems STATIC
+	systems/render.cpp
+		)
+target_include_directories(systems PUBLIC
+		${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(systems PUBLIC GLEW::GLEW glfw imgui tiny_gltf)
 
 # executable
 add_executable(game_engine src/main.cpp)
-target_link_libraries(game_engine PRIVATE modules)
+target_link_libraries(game_engine PRIVATE modules systems)
 

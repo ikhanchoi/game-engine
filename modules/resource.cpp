@@ -6,7 +6,6 @@
 
 namespace ikhanchoi {
 
-Resource::Resource(unsigned int id, const std::string &name) : Object(id, name) {}
 
 /*---------------*/
 /* ModelResource */
@@ -121,7 +120,5 @@ void ShaderResource::loadShader(const std::string& path) {
 /*-----------------*/
 
 
-ResourceManager::ResourceManager(unsigned int id, const std::string &name) : Manager(id, name) {}
-ResourceManager::~ResourceManager() = default;
 
 }

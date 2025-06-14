@@ -12,25 +12,28 @@
 namespace ikhanchoi {
 
 class Entity : public Object {
-	std::unordered_map<std::type_index, std::unique_ptr<Component>> component; // shared by only one entity
-	std::vector<Entity*> children;
-	Entity* parent = nullptr;
+	std::unordered_map<std::type_index, std::weak_ptr<Component>> component; // shared by only one entity
+	std::vector<std::weak_ptr<Entity>> children;
+	std::weak_ptr<Entity> parent;
 public:
 	explicit Entity(unsigned int id, const std::string& name) : Object(id, name) {}
 	~Entity() = default;
-	void update(Updater& updater) override { updater.update(*this); }
+	void visit(Visitor& visitor) override { visitor.visit(*this); }
+	static std::shared_ptr<Manager> generateManager() {
+		return std::move(std::dynamic_pointer_cast<Manager>(std::make_shared<EntityManager>())); }
+	static std::string getTypeName() { return "Entity"; }
 
 
 	template <typename ComponentType>
 	void setComponent(std::unique_ptr<ComponentType> component) {
 		static_assert(std::is_base_of<Component, ComponentType>::value);
 		if (this->component.find(typeid(ComponentType)) != this->component.end()) {
-			this->component[typeid(ComponentType)]->setActive(false);
+			//this->component[typeid(ComponentType)]->setActive(false);
 			//this->component[typeid(T)]->setEntity(nullptr);
 		}
 		this->component[typeid(ComponentType)] = std::move(component);
 	}
-	std::unordered_map<std::type_index, std::unique_ptr<Component>>& getComponent() {
+	std::unordered_map<std::type_index, std::weak_ptr<Component>>& getComponent() {
 		return component;
 	}
 	template <typename ComponentType>
@@ -46,9 +49,9 @@ public:
 class EntityManager : public Manager {
 	std::vector<std::unique_ptr<Entity>> entities; // top entities
 public:
-	explicit EntityManager(unsigned int id, const std::string& name);
+	explicit EntityManager() : Manager(0, "Entity manager", typeid(Entity)) {}
 	~EntityManager() override = default;
-	void update(Updater& updater) override { updater.update(*this); }
+	void visit(Visitor& visitor) override { visitor.visit(*this); }
 
 	const std::vector<std::unique_ptr<Entity>>& getEntities() { return entities; }
 

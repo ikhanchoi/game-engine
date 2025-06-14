@@ -16,7 +16,7 @@ namespace ikhanchoi {
 /* Resource */
 /*----------*/
 
-void WindowUpdater::update(ModelResource& modelResource) {
+void WindowRenderer::visit(ModelResource& modelResource) {
 	ImGui::PushID(&modelResource);
 	ImGui::SetNextItemOpen(true, ImGuiCond_Once);
 	bool open = ImGui::CollapsingHeader((modelResource.getName() + " (id: " + std::to_string(modelResource.getId()) + ")").c_str());
@@ -35,7 +35,7 @@ void WindowUpdater::update(ModelResource& modelResource) {
 	ImGui::PopID();
 }
 
-void WindowUpdater::update(ShaderResource& shaderResource) {
+void WindowRenderer::visit(ShaderResource& shaderResource) {
 	ImGui::PushID(&shaderResource);
 	ImGui::SetNextItemOpen(true, ImGuiCond_Once);
 	bool open = ImGui::CollapsingHeader((shaderResource.getName() + " (id: " + std::to_string(shaderResource.getId()) + ")").c_str());
@@ -53,15 +53,15 @@ void WindowUpdater::update(ShaderResource& shaderResource) {
 	ImGui::PopID();
 }
 
-void WindowUpdater::update(ResourceManager& resourceManager) {
+void WindowRenderer::visit(ResourceManager& resourceManager) {
 	ImGui::PushID(&resourceManager);
 	ImGui::BeginTabBar("Resources", ImGuiTabBarFlags_::ImGuiTabBarFlags_Reorderable);
-	for (const auto &[resourceType, resourceTypeName]: resourceManager.getTypes()) {
-		ImGui::PushID(resourceType.name());
-		if (ImGui::BeginTabItem((resourceTypeName + "s").c_str())) {
-			resourceManager.forEach<Resource>(resourceType, [this](Resource* resource) {
+	for (const auto &[concrete, pool]: resourceManager.getPool()) {
+		ImGui::PushID(concrete.name());
+		if (ImGui::BeginTabItem((find<std::type_index>(resourceManager.getRoot(), concrete)->name + "s").c_str())) {
+			resourceManager.forEach<Resource>(concrete, [this](Resource* resource) {
 				if (resource->isActive())
-					resource->update(*this);
+					resource->visit(*this);
 			});
 			ImGui::EndTabItem();
 		}
@@ -82,7 +82,7 @@ void WindowUpdater::update(ResourceManager& resourceManager) {
 /* Entity */
 /*--------*/
 
-void WindowUpdater::update(Entity& entity) {
+void WindowRenderer::visit(Entity& entity) {
 	ImGui::PushID(&entity);
 	ImGui::SetNextItemOpen(true, ImGuiCond_Once);
 	bool open = ImGui::CollapsingHeader((entity.getName() + " (ID: " + std::to_string(entity.getId()) + ")").c_str());
@@ -102,7 +102,7 @@ void WindowUpdater::update(Entity& entity) {
 	if (open) {
 		ImGui::Checkbox("Active", entity.accessActive());
 		for (const auto& [componentType, component] : entity.getComponent())
-			component->update(*this);
+			component.lock()->visit(*this);
 		ImGui::Text("Drag and drop to set components.");
 		if (ImGui::BeginDragDropTarget()) {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Component")) {
@@ -154,12 +154,12 @@ void WindowUpdater::update(Entity& entity) {
 }
 
 
-void WindowUpdater::update(EntityManager& entityManager) {
+void WindowRenderer::visit(EntityManager& entityManager) {
 	ImGui::PushID(&entityManager); // TODO: reorderable.
 	for (const auto& entity : entityManager.getEntities()) {
 		if (entity == nullptr)
 			continue;
-		entity->update(*this);
+		entity->visit(*this);
 	}
 
 	if (ImGui::Button("Add entity", ImVec2(-1, 0)))
@@ -189,7 +189,7 @@ void WindowUpdater::update(EntityManager& entityManager) {
 /*----------------*/
 
 
-WindowManager::WindowManager(unsigned int id, const std::string& name) : Manager(id, name) {
+WindowManager::WindowManager() : Manager(0, "Window manager", typeid(Window)) {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -204,31 +204,30 @@ WindowManager::~WindowManager() {
 	ImGui::DestroyContext();
 }
 
-void WindowUpdater::update(Window& window) {
+void WindowRenderer::visit(Window& window) {
 	ImGui::Begin(window.getName().c_str());
-	std::variant<std::shared_ptr<Object>, std::shared_ptr<Manager>> content = window.getContent();
+	std::variant<std::weak_ptr<Object>, std::weak_ptr<Manager>> content = window.getContent();
 	std::visit([this](auto& content) {
-	    if (content)
-	        content->update(*this);
+	    if (!content.expired())
+	        content.lock()->visit(*this);
 	}, content);
 	ImGui::End();
 }
 
-void WindowUpdater::update(WindowManager& windowManager) {
+void WindowRenderer::visit(WindowManager& windowManager) {
 	ImGui_ImplOpenGL3_NewFrame(), ImGui_ImplGlfw_NewFrame(), ImGui::NewFrame();
 	ImGui::Begin(windowManager.getName().c_str());
 	ImGui::Checkbox("Demo window", windowManager.accessDemo());
-	windowManager.forEach<Window>(typeid(Window), [](Window* window) {
+	windowManager.forEach<Window>([](Window* window) {
 		ImGui::Checkbox((window->getName() + " window").c_str(), window->accessActive());
 	});
-	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-				1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 	ImGui::End();
 	if (*windowManager.accessDemo())
 		ImGui::ShowDemoWindow();
-	windowManager.forEach<Window>(typeid(Window), [this](Window* window) {
+	windowManager.forEach<Window>([this](Window* window) {
 		if (window->isActive())
-			window->update(*this);
+			window->visit(*this);
 	});
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

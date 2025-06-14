@@ -12,7 +12,7 @@ namespace ikhanchoi {
 class Component : public Object {
 
 public:
-	virtual void update(Updater& updater) = 0;
+	virtual void visit(Visitor& visitor) = 0;
 
 };
 

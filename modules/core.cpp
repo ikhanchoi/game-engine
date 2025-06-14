@@ -19,28 +19,23 @@ std::weak_ptr<Manager> Manager::getManager(std::type_index managerType) {
     return manager[managerType];
 }
 
-Handle Manager::create(const std::type_index& type, const std::string& name) {
-    if (types.find(type) == types.end())
+Handle Manager::create(const std::type_index& concrete, const std::string& name) {
+    if (pool.find(concrete) == pool.end())
         throw std::runtime_error("Error: (Manager::create) Type not registered.");
-    std::unique_ptr<Object> object = factory[type](0, name);
+    std::unique_ptr<Object> object = factory[concrete](0, name);
     if (!object)
         throw std::runtime_error("Error: (Manager::create) Failed to create object.");
-    Handle handle = pool[type]->add(object.get());
+    Handle handle = pool[concrete]->add(object.get());
     object->setId(handle.index);
     return handle;
 }
 
 void Manager::destroy(const Handle& handle) {
-	if (types.find(handle.type) == types.end())
+	if (pool.find(handle.type) == pool.end())
         throw std::runtime_error("Error: (Manager::destroy) Module not found.");
     pool[handle.type]->remove(handle);
 }
 
-Object* Manager::access(const Handle& handle) {
-	if (types.find(handle.type) == types.end())
-        throw std::runtime_error("Error: (Manager::access) Module not found.");
-    return pool[handle.type]->access(handle);
-}
 
 
 /*---------*/

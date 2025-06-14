@@ -26,7 +26,7 @@ protected:
 public:
 	explicit Object(uint32_t id, const std::string& name) : id(id), name(name) {}
 	virtual ~Object() = default;
-	virtual void update(class Updater& updater) = 0;
+	virtual void visit(class Visitor& visitor) = 0;
 
 	void setId(uint32_t id) { this->id = id; }
 	void setName(const std::string& name) { this->name = name; }
@@ -36,6 +36,10 @@ public:
 	bool isActive() const { return active; }
 	bool* accessActive() { return &active; }
 };
+
+
+
+
 
 class Window;
 
@@ -50,6 +54,7 @@ class CameraComponent;
 class LightComponent;
 
 class Entity;
+
 
 
 /*---------*/
@@ -75,11 +80,12 @@ public:
 	virtual void forEach(const std::function<void(Object*)>& function) = 0;
 };
 
-template <typename Type>
+template <typename Concrete>
 class Pool : public PoolBase {
-static_assert(std::is_base_of_v<Object, Type>);
+static_assert(std::is_base_of_v<Object, Concrete>);
+static_assert(!std::is_abstract_v<Concrete>);
 	struct Slot {
-        Type object;
+        Concrete object;
         uint32_t generation = 0;
         bool alive = false;
     };
@@ -89,49 +95,81 @@ public:
 	explicit Pool() = default;
 	~Pool() override = default;
 
-	Handle add(Object* untypedObject) override;
+	Handle add(Object* object) override;
 	void remove(const Handle& handle) override;
 	Object* access(const Handle& handle) override;
 	void forEach(const std::function<void(Object*)>& function) override;
+	void forEach(const std::function<void(Concrete*)>& function);
 };
+
+
+
+template <typename T>
+struct Tree {
+	T data;
+    std::string name;
+    std::vector<std::shared_ptr<Tree>> children;
+	Tree(T data, const std::string& name) : data(data), name(name) {}
+};
+
+template <typename T>
+std::shared_ptr<Tree<T>> find(const std::shared_ptr<Tree<T>>& node, const T& target) {
+    if (node->data == target)
+        return node;
+    for (const auto& child : node->children)
+        if (auto found = find(child, target))
+            return found;
+    return nullptr;
+}
+
+
 
 class Manager {
 protected:
 	uint32_t id;
 	std::string name;
-	std::unordered_map<std::type_index, std::string> types; // will not be used like types[typeid]
+	std::shared_ptr<Tree<std::type_index>> root;
 	std::unordered_map<std::type_index, std::shared_ptr<PoolBase>> pool; // manager hold pools
     std::unordered_map<std::type_index, std::function<std::unique_ptr<Object>(uint32_t, const std::string&)>> factory;
 	std::unordered_map<std::type_index, std::weak_ptr<Manager>> manager; // type is of manager
 public:
-	explicit Manager(unsigned int id, const std::string& name) : id(id), name(name) {}
+	explicit Manager(uint32_t id, const std::string& name, std::type_index rootType) : id(id), name(name) {
+		root = std::make_shared<Tree<std::type_index>>(rootType, name.substr(0, name.find(" "))); // type is the first word of name
+	}
 	virtual ~Manager() = default;
-	virtual void update(class Updater& updater) = 0;
+	virtual void visit(class Visitor& visitor) = 0;
 
 	void setId(unsigned int id) { this->id = id; }
 	void setName(const std::string& name) { this->name = name; }
-	template <typename Type>
-	void registerType(const std::string& typeName);
+	template <typename ParentType, typename ChildType>
+	void registerType();
+	template <typename Concrete>
+	void registerPool();
 	void setManager(std::weak_ptr<Manager> manager);
 	unsigned int getId() const { return id; }
 	const std::string& getName() const { return name; }
-	const std::unordered_map<std::type_index, std::string>& getTypes() const { return types; }
+	const std::shared_ptr<Tree<std::type_index>>& getRoot() const { return root; }
+	const std::unordered_map<std::type_index, std::shared_ptr<PoolBase>>& getPool() { return pool; }
 	std::weak_ptr<Manager> getManager(std::type_index managerType);
 
 	Handle create(const std::type_index& type, const std::string& name);
 	void destroy(const Handle& handle);
 
-	Object* access(const Handle& handle);
-	template <typename Module, typename Function>
-	void forEach(const std::type_index& type, Function&& function);
+	template <typename Type>
+	Type* access(const Handle& handle);
+	template <typename Type, typename Function>
+	void forEach(const std::type_index& concrete, Function&& function);
+	template <typename Concrete, typename Function>
+	void forEach(Function&& function);
 };
 
-#include "core.inl"
 
 class WindowManager;
 class ResourceManager;
 class ComponentManager;
 class EntityManager;
+
+
 
 
 
@@ -142,49 +180,6 @@ class EntityManager;
 class RenderSystem;
 
 
-
-
-/*---------*/
-/* Updater */
-/*---------*/
-
-class Updater {
-public:
-	virtual void update(class Window& window) = 0;
-	virtual void update(class WindowManager& windowManager) = 0;
-
-	virtual void update(class ModelResource& modelResource) = 0;
-	virtual void update(class ShaderResource& shaderResource) = 0;
-	virtual void update(class ResourceManager& resourceManager) = 0;
-
-	virtual void update(class Entity& entity) = 0;
-	virtual void update(class EntityManager& entityManager) = 0;
-
-	virtual void update(class RenderComponent& renderComponent) = 0;
-	virtual void update(class TransformComponent& transformComponent) = 0;
-	virtual void update(class CameraComponent& cameraComponent) = 0;
-	virtual void update(class LightComponent& lightComponent) = 0;
-
-
-};
-
-class EmptyUpdater : public Updater {
-public:
-	void update(Window& window) override {};
-	void update(WindowManager& windowManager) override {};
-
-	void update(ModelResource& modelResource) override {}
-	void update(ShaderResource& shaderResource) override {}
-	void update(ResourceManager& resourceManager) override {}
-
-	void update(Entity& entity) override {}
-	void update(EntityManager& entityManager) override {}
-
-	void update(RenderComponent& renderComponent) override {}
-	void update(TransformComponent& transformComponent) override {}
-	void update(CameraComponent& cameraComponent) override {}
-	void update(LightComponent& lightComponent) override {}
-};
 
 
 
@@ -204,17 +199,62 @@ public:
 
 	GLFWwindow* getGlfwWindow() { return glfwWindow; }
 
+	template <typename Module>
+	void registerModule();
+	template <typename Module>
+	std::weak_ptr<Manager> getManager();
 	template <typename ManagerType>
-	std::shared_ptr<ManagerType> registerManager(const std::string& managerName) {
-		static_assert(std::is_base_of<Manager, ManagerType>::value);
-		if (this->manager.find(typeid(ManagerType)) != this->manager.end())
-			throw std::runtime_error("Error: (Context::registerModule) Manager type already registered.");
-		auto manager = std::make_shared<ManagerType>(this->manager.size(), managerName);
-		this->manager[typeid(ManagerType)] = manager;
-		return manager;
-	}
+	ManagerType* access();
 };
 
+
+
+
+/*---------*/
+/* Visitor */
+/*---------*/
+
+class Visitor {
+public:
+	virtual void visit(class Window& window) = 0;
+	virtual void visit(class WindowManager& windowManager) = 0;
+
+	virtual void visit(class ModelResource& modelResource) = 0;
+	virtual void visit(class ShaderResource& shaderResource) = 0;
+	virtual void visit(class ResourceManager& resourceManager) = 0;
+
+	virtual void visit(class Entity& entity) = 0;
+	virtual void visit(class EntityManager& entityManager) = 0;
+
+	virtual void visit(class RenderComponent& renderComponent) = 0;
+	virtual void visit(class TransformComponent& transformComponent) = 0;
+	virtual void visit(class CameraComponent& cameraComponent) = 0;
+	virtual void visit(class LightComponent& lightComponent) = 0;
+
+
+};
+
+class EmptyVisitor : public Visitor {
+public:
+	void visit(Window& window) override {};
+	void visit(WindowManager& windowManager) override {};
+
+	void visit(ModelResource& modelResource) override {}
+	void visit(ShaderResource& shaderResource) override {}
+	void visit(ResourceManager& resourceManager) override {}
+
+	void visit(Entity& entity) override {}
+	void visit(EntityManager& entityManager) override {}
+
+	void visit(RenderComponent& renderComponent) override {}
+	void visit(TransformComponent& transformComponent) override {}
+	void visit(CameraComponent& cameraComponent) override {}
+	void visit(LightComponent& lightComponent) override {}
+};
+
+
+
+#include "core.inl"
 
 }
 

@@ -8,54 +8,62 @@
 
 namespace ikhanchoi {
 
+using Content = std::variant<std::weak_ptr<Object>, std::weak_ptr<Manager>>;
 
 class Window : public Object {
-	std::variant<std::shared_ptr<Object>, std::shared_ptr<Manager>> content;
+	Content content;
 public:
 	explicit Window(unsigned int id, const std::string& name) : Object(id, name) {}
 	~Window() override = default;
-	void update(Updater& updater) override { updater.update(*this); }
-	void loadContent(std::shared_ptr<Manager> manager) { this->content = manager; }
-	std::variant<std::shared_ptr<Object>, std::shared_ptr<Manager>> getContent() { return content; }
+	void visit(Visitor& visitor) override { visitor.visit(*this); }
+	static std::shared_ptr<Manager> generateManager() {
+		return std::move(std::dynamic_pointer_cast<Manager>(std::make_shared<WindowManager>())); }
+	static std::string getTypeName() { return "Window"; }
+
+	void loadContent(Content content) { this->content = content; }
+	Content getContent() { return content; }
 };
 
-class WindowUpdater : public EmptyUpdater {
+
+
+class WindowRenderer : public EmptyVisitor {
 public:
-	void update(ModelResource& modelResource) override;
-	void update(ShaderResource& shaderResource) override;
-	void update(ResourceManager& resourceManager) override;
-	std::vector<std::string> resourceEventQueue;
+	void visit(ModelResource& modelResource) override;
+	void visit(ShaderResource& shaderResource) override;
+	void visit(ResourceManager& resourceManager) override;
 
-	void update(Entity& entity) override;
-	void update(EntityManager& entityManager) override;
-	std::vector<std::string> entityEventQueue;
+	void visit(Entity& entity) override;
+	void visit(EntityManager& entityManager) override;
 
-	void update(Window& window) override;
-	void update(WindowManager& windowManager) override;
+	void visit(Window& window) override;
+	void visit(WindowManager& windowManager) override;
 };
-
 
 
 
 class WindowManager : public Manager {
 private:
 	bool demo = false;
-	WindowUpdater windowUpdater;
+	WindowRenderer windowRenderer;
 public:
-	explicit WindowManager(unsigned int id, const std::string& name);
+	explicit WindowManager();
 	~WindowManager() override;
-	void update(Updater& updater) override { updater.update(*this); }
-	void update() { update(windowUpdater); };
+	void visit(Visitor& visitor) override { visitor.visit(*this); }
+	void render() { visit(windowRenderer); };
 
 	bool* accessDemo() { return &demo; }
-	std::shared_ptr<Window> addWindow(const std::string& name, std::shared_ptr<Manager> manager) {
-		if (types.find(typeid(Window)) == types.end())
+
+	Handle addWindow(const std::type_index& windowConcrete, const std::string& name, Content content) {
+		if (pool.find(windowConcrete) == pool.end())
 			throw std::runtime_error("Error: (WindowManager::addWindow) Window type not registered.");
-		auto window = dynamic_cast<Window*>(access(create(typeid(Window), name)));
-		window->loadContent(std::move(manager));
-		std::shared_ptr<void> dummy(nullptr, [](void*) {});
-		std::shared_ptr<Window> alias(dummy, window);
-		return alias;
+		auto handle = create(windowConcrete, name);
+		this->access<Window>(handle)->loadContent(content);
+		return handle;
+	}
+	template <typename WindowType>
+	Handle addWindow(const std::string& name, Content content) {
+		static_assert(std::is_base_of_v<Window, WindowType>);
+		return addWindow(typeid(WindowType), name, content);
 	}
 };
 

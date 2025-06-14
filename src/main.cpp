@@ -13,23 +13,31 @@ int main() {
 
 	auto context = std::make_unique<ikhanchoi::Context>("GLTF Viewer", 1280, 960);
 
-	// Modules
-	auto windowManager = context->registerManager<ikhanchoi::WindowManager>("Window manager");
-	auto resourceManager = context->registerManager<ikhanchoi::ResourceManager>("Resource manager");
-	auto entityManager = context->registerManager<ikhanchoi::EntityManager>("Entity manager");
+	// Module registration
+	context->registerModule<ikhanchoi::Window>();
+	auto* windowManager = context->access<ikhanchoi::WindowManager>();
+	windowManager->registerPool<ikhanchoi::Window>();
 
-	windowManager->registerType<ikhanchoi::Window>("Window");
+	context->registerModule<ikhanchoi::Resource>();
+	auto* resourceManager = context->access<ikhanchoi::ResourceManager>();
+	resourceManager->registerType<ikhanchoi::Resource, ikhanchoi::ModelResource>();
+	resourceManager->registerPool<ikhanchoi::ModelResource>();
+	resourceManager->registerType<ikhanchoi::Resource, ikhanchoi::ShaderResource>();
+	resourceManager->registerPool<ikhanchoi::ShaderResource>();
 
-	resourceManager->registerType<ikhanchoi::ModelResource>("Model");
-	resourceManager->registerType<ikhanchoi::ShaderResource>("Shader");
-
-	// entityManager->registerType<ikhanchoi::Entity>("Entity");
 
 
-	// Settings
+	context->registerModule<ikhanchoi::Entity>();
+	auto* entityManager = context->access<ikhanchoi::EntityManager>();
+	// entityManager->registerPool<ikhanchoi::Entity>();
 
-	auto resourceManagerWindow = windowManager->addWindow("Resource manager", resourceManager);
-	auto entityManagerWindow = windowManager->addWindow("Entity manager", entityManager);
+
+	// Add objects
+
+	//  there is a default window for window manager
+	windowManager->addWindow<ikhanchoi::Window>("Resource manager", context->getManager<ikhanchoi::Resource>());
+
+
 
 
 	auto boomBox = resourceManager->addResource<ikhanchoi::ModelResource>("boomBox", "BoomBox/BoomBox.gltf");
@@ -48,7 +56,7 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-		windowManager->update();
+		windowManager->render();
 
 		glfwSwapBuffers(context->getGlfwWindow());
 

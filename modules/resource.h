@@ -58,7 +58,7 @@ public:
 
 
 class ShaderResource : public Resource {
-	GLuint shader{};
+	GLuint shaderObject;
 public:
 	explicit ShaderResource(unsigned int id, const std::string& name) : Resource(id, name) {}
 	~ShaderResource() override;
@@ -69,7 +69,7 @@ public:
 		loadShader("../assets/shaders/" + path);
 	}
 
-	GLuint getShader() const { return shader; }
+	GLuint getShaderObject() const { return shaderObject; }
 
 	void loadShader(const std::string& path);
 

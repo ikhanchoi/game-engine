@@ -74,41 +74,35 @@ void ModelResource::loadTextureObjects() {
 
 
 ShaderResource::~ShaderResource() {
-	glDeleteShader(shader);
+	glDeleteShader(shaderObject);
 }
 
 void ShaderResource::loadShader(const std::string& path) {
-	std::ifstream fs;
-	std::string code;
-	const char* cstr;
-	int success;
 
-	fs.exceptions(std::ifstream::failbit|std::ifstream::badbit);
-	try {
-		fs.open(path);
-		std::stringstream ss;
-		ss << fs.rdbuf();
-		code = ss.str();
-		fs.close();
-	} catch (std::ifstream::failure& err) {
-		throw std::runtime_error("Error: (ShaderResource::loadShader) Failed to load shader file: " + path + ". " + err.what());
-	}
-	cstr = code.c_str();
+	std::ifstream fs(path);
+	if (!fs.is_open())
+    	throw std::runtime_error("Error: (ShaderResource::loadShader) Failed to open file: " + path);
+	std::stringstream ss;
+	ss << fs.rdbuf();
+	fs.close();
+	auto code = ss.str();
+	auto* src = code.c_str();
 
 	std::string extension = path.substr(path.rfind('.') + 1);
 	if (extension == "vert")
-		shader = glCreateShader(GL_VERTEX_SHADER);
+		shaderObject = glCreateShader(GL_VERTEX_SHADER);
 	else if (extension == "frag")
-		shader = glCreateShader(GL_FRAGMENT_SHADER);
+		shaderObject = glCreateShader(GL_FRAGMENT_SHADER);
 	else
 		throw std::runtime_error("Error: (ShaderResource::loadShader) Failed to parse shader extension: " + extension);
 
-	glShaderSource(shader, 1, &cstr, NULL);
-	glCompileShader(shader);
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+	glShaderSource(shaderObject, 1, &src, NULL);
+	glCompileShader(shaderObject);
+	int success;
+	glGetShaderiv(shaderObject, GL_COMPILE_STATUS, &success);
 	if (!success) {
 		char infoLog[512];
-		glGetShaderInfoLog(shader, 512, NULL, infoLog);
+		glGetShaderInfoLog(shaderObject, 512, NULL, infoLog);
 		throw std::runtime_error("Error: (ShaderResource::loadShader) Failed to compile shader: " + path + ". " + infoLog);
 	}
 }

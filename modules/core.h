@@ -14,6 +14,38 @@
 
 namespace ikhanchoi {
 
+
+
+/*
+class Module {
+public:
+	virtual void visit(class Visitor& visitor) = 0;
+};
+
+template <typename T>
+class Object : public virtual Module {
+public:
+	void visit(Visitor& visitor) override { visitor.visit(static_cast<T&>(*this)); }
+};
+
+class Resource : public virtual Module {
+
+};
+
+class ModelResource : public Resource, public Object<ModelResource> {
+
+};
+*/
+
+// id 와 name은 Object만 가지도록
+
+
+
+
+
+
+
+
 /*--------*/
 /* Object */
 /*--------*/
@@ -168,8 +200,6 @@ class WindowManager;
 class ResourceManager;
 class ComponentManager;
 class EntityManager;
-
-
 
 
 

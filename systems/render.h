@@ -6,8 +6,6 @@
 #define GAME_ENGINE_RENDER_H
 
 
-class render {
-};
 
 
 #endif//GAME_ENGINE_RENDER_H

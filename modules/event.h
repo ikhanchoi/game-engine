@@ -71,9 +71,14 @@ public:
         while (!eventQueue[eventType].empty()) {
             std::unique_ptr<Event> event = std::move(eventQueue[eventType].front());
             eventQueue[eventType].pop();
+			for (const auto& listener : listeners[eventType]) {
+				listener(*event);
+			}
+			/*
 			if (listeners.contains(typeid(*event)))
 				for (const auto& listener: listeners[typeid(*event)])
 					listener(*event);
+			*/
 		}
     }
 

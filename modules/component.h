@@ -9,17 +9,25 @@
 
 namespace ikhanchoi {
 
-class Component : public Object {
-
+class ComponentModule : public CRTPModule<ComponentModule> {
 public:
-	virtual void visit(Visitor& visitor) = 0;
+	static std::unique_ptr<ManagerBase> generateManager();
+};
+
+
+class ComponentBase : public Base {
 
 };
 
-class RenderComponent : public Component {
+class RenderComponent : public ComponentBase, public CRTPObject<RenderComponent> {
 
 
 };
+
+class ComponentManager : public ManagerBase {
+
+};
+
 }
 
 #endif//GAME_ENGINE_COMPONENT_H

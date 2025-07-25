@@ -5,6 +5,7 @@
 #include <string>
 #include <typeindex>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 #include <functional>
 
@@ -12,54 +13,88 @@
 #include <GLFW/glfw3.h>
 
 
+
+
 namespace ikhanchoi {
 
 
 
-/*
-class Module {
+/*---------*/
+/* Visitor */
+/*---------*/
+
+class Visitor {
 public:
-	virtual void visit(class Visitor& visitor) = 0;
+	virtual void visit(class ManagerWindow& managerWindow) const = 0;
+
+	virtual void visit(class ModelResource& modelResource) const = 0;
+	virtual void visit(class ShaderResource& shaderResource) const = 0;
+
+	virtual void visit(class Entity& entity) const = 0;
+
+	virtual void visit(class RenderComponent& renderComponent) const = 0;
+	virtual void visit(class TransformComponent& transformComponent) const = 0;
+	virtual void visit(class CameraComponent& cameraComponent) const = 0;
+	virtual void visit(class LightComponent& lightComponent) const = 0;
+
 };
 
-template <typename T>
-class Object : public virtual Module {
+class EmptyVisitor : public Visitor {
+	class Context* context = nullptr;
 public:
-	void visit(Visitor& visitor) override { visitor.visit(static_cast<T&>(*this)); }
+	void setContext(class Context* context) { this->context = context; }
+	Context* getContext() const { return context; }
+
+	void visit(ManagerWindow& managerWindow) const override {};
+
+	void visit(ModelResource& modelResource) const override {}
+	void visit(ShaderResource& shaderResource) const override {}
+
+	void visit(Entity& entity) const override {}
+
+	void visit(RenderComponent& renderComponent) const override {}
+	void visit(TransformComponent& transformComponent) const override {}
+	void visit(CameraComponent& cameraComponent) const override {}
+	void visit(LightComponent& lightComponent) const override {}
 };
 
-class Resource : public virtual Module {
 
+/*--------*/
+/* Module */
+/*--------*/
+
+
+
+template<typename ModuleType>
+class CRTPModule {
+public:
+    static std::unique_ptr<class ManagerBase> generateManager() {
+        static_assert(std::is_same_v<decltype(ModuleType::generateManager()), std::unique_ptr<ManagerBase>>);
+        return ModuleType::generateManager();
+    }
 };
-
-class ModelResource : public Resource, public Object<ModelResource> {
-
-};
-*/
-
-// id 와 name은 Object만 가지도록
-
-
-
-
-
-
 
 
 /*--------*/
 /* Object */
 /*--------*/
 
-class Object {
+// An abstract base class for diamond inheritance.
+class Base {
+public:
+	virtual ~Base() noexcept = 0;
+};
+
+
+// An abstract mix-in class for concrete classes.
+class Object : public virtual Base {
 protected:
-	uint32_t id; // id counted for each type
+	uint32_t id;
 	std::string name;
 	bool active = true;
-public:
-	explicit Object(uint32_t id, const std::string& name) : id(id), name(name) {}
-	virtual ~Object() = default;
-	virtual void visit(class Visitor& visitor) = 0;
 
+	explicit Object(uint32_t id, std::string name) : id(id), name(std::move(name)) {}
+public:
 	void setId(uint32_t id) { this->id = id; }
 	void setName(const std::string& name) { this->name = name; }
 	void setActive(bool active) { this->active = active; }
@@ -67,7 +102,50 @@ public:
 	const std::string& getName() const { return name; }
 	bool isActive() const { return active; }
 	bool* accessActive() { return &active; }
+
+	virtual void accept(const class Visitor& visitor) = 0;
 };
+
+// Each concrete class actually inherits the CRTP class `Object` to implement the visit method.
+/*
+ * The virtual inheritance is used to cast the object to the correct type in run-time.
+ * For instance, if a class `ModelResource` inherits from `Object` class and `Resource` class,
+ * and if `Resource` class inherits from `Module` class, then in order to cast a pointer
+ * `Resource* modelResource` that points to a `ModelResource` object, we can use
+ * `dynamic_cast<Object*>(modelResource)` to get a pointer to the base class.
+ * This is because `Object` is a virtual base class of `ModelResource`, allowing us to safely
+ * down-cast it to the correct type.
+ */
+
+/*
+ * The Visitor pattern is one technique to achieve run-time polymorphism.
+ * The accept method will be implemented within CRTP.
+ *
+ * It is particularly useful for adding new operations to an existing object hierarchy
+ * without modifying the classes within that hierarchy (adhering to the Open/Closed Principle),
+ * which prevents scattering functionally similar but type-specific method implementations
+ * across various source files.
+ *
+ * It also enables reference to unique member variables of concrete derived classes from a
+ * common interface pointer, which the usual virtual functions cannot provide.
+ */
+
+// An abstract CRTP base class that injects the implementation of the visit method to each object
+template <typename ObjectType>
+class CRTPObject : public Object {
+protected:
+	explicit CRTPObject(uint32_t id, const std::string& name) : Object(id, name) {}
+public:
+	void accept(const Visitor& visitor) override { visitor.visit(static_cast<ObjectType&>(*this)); } // (1)
+};
+
+/* The CRTPObject class is a CRTP base class that provides the implementation of the visit method.
+ * It is used to avoid virtual inheritance and to provide a compile-time polymorphism.
+ * The ObjectType is the concrete class that inherits from CRTPObject.
+ * The ObjectType should be derived from Object, and it should not be abstract. */
+
+/* (1) The class Visitor should be defined before this method, and forward declaration of Visitor is not sufficient. */
+
 
 
 
@@ -97,10 +175,9 @@ class Entity;
 struct Handle {
     uint32_t index;
     uint32_t generation;
-	std::type_index type;
-    bool operator == (const Handle& other) const {
-        return index == other.index && generation == other.generation && type == other.type;
-    }
+	std::type_index type; // object type
+	Handle() : index(0), generation(0), type(typeid(void)) {}
+	Handle(uint32_t index, uint32_t generation, std::type_index type) : index(index), generation(generation), type(type) {}
 };
 
 class PoolBase {
@@ -112,30 +189,34 @@ public:
 	virtual void forEach(const std::function<void(Object*)>& function) = 0;
 };
 
-template <typename Concrete>
+template <typename ObjectType>
 class Pool : public PoolBase {
-static_assert(std::is_base_of_v<Object, Concrete>);
-static_assert(!std::is_abstract_v<Concrete>);
+static_assert(std::is_base_of_v<Object, ObjectType> && !std::is_abstract_v<ObjectType>);
 	struct Slot {
-        Concrete object;
+        alignas(ObjectType) char objectBuffer[sizeof(ObjectType)];
         uint32_t generation = 0;
         bool alive = false;
     };
 	std::vector<Slot> slots;
     std::vector<uint32_t> frees;
 public:
-	explicit Pool() = default;
-	~Pool() override = default;
-
-	Handle add(Object* object) override;
+	explicit Pool(size_t initialCapacity = 64) {
+        slots.reserve(initialCapacity);
+        for (size_t i = 0; i < initialCapacity; ++i) {
+            slots.emplace_back();
+            frees.push_back(i);
+        }
+        std::reverse(frees.begin(), frees.end());
+    }
+	Handle add(Object* untypedObject) override;
 	void remove(const Handle& handle) override;
-	Object* access(const Handle& handle) override;
-	void forEach(const std::function<void(Object*)>& function) override;
-	void forEach(const std::function<void(Concrete*)>& function);
+	Object* access(const Handle& handle) override; // It returns `Object*` instead of `ObjectType*` for overriding.
+	void forEach(const std::function<void(Object*)>& function) override; // It is for up-casted object access.
+	void forEach(const std::function<void(ObjectType*)>& function); // It is for down-casted object access.
 };
 
 
-
+/*
 template <typename T>
 struct Tree {
 	T data;
@@ -153,45 +234,35 @@ std::shared_ptr<Tree<T>> find(const std::shared_ptr<Tree<T>>& node, const T& tar
             return found;
     return nullptr;
 }
+*/
 
-
-
-class Manager {
+// A base class for managers.
+// creates and destroys objects by pools, and provides a method to round over the objects.
+class ManagerBase {
 protected:
-	uint32_t id;
-	std::string name;
-	std::shared_ptr<Tree<std::type_index>> root;
-	std::unordered_map<std::type_index, std::shared_ptr<PoolBase>> pool; // manager hold pools
+	class Context* context; // for accessing other managers via context
+	std::unordered_map<std::type_index, std::shared_ptr<PoolBase>> pool;
     std::unordered_map<std::type_index, std::function<std::unique_ptr<Object>(uint32_t, const std::string&)>> factory;
-	std::unordered_map<std::type_index, std::weak_ptr<Manager>> manager; // type is of manager
+protected:
+	Handle create(const std::type_index& type, const std::string& name); // creator for objects
+	void destroy(const Handle& handle); // destroyer for objects
 public:
-	explicit Manager(uint32_t id, const std::string& name, std::type_index rootType) : id(id), name(name) {
-		root = std::make_shared<Tree<std::type_index>>(rootType, name.substr(0, name.find(" "))); // type is the first word of name
-	}
-	virtual ~Manager() = default;
-	virtual void visit(class Visitor& visitor) = 0;
+	virtual ~ManagerBase() = default;
 
-	void setId(unsigned int id) { this->id = id; }
-	void setName(const std::string& name) { this->name = name; }
-	template <typename ParentType, typename ChildType>
-	void registerType();
-	template <typename Concrete>
-	void registerPool();
-	void setManager(std::weak_ptr<Manager> manager);
-	unsigned int getId() const { return id; }
-	const std::string& getName() const { return name; }
-	const std::shared_ptr<Tree<std::type_index>>& getRoot() const { return root; }
-	const std::unordered_map<std::type_index, std::shared_ptr<PoolBase>>& getPool() { return pool; }
-	std::weak_ptr<Manager> getManager(std::type_index managerType);
+	// setters and getters
+	void setContext(Context* context) { this->context = context; }
+	template <typename ObjectType>
+	void registerObjectType();
+	Context* getContext() { return context; };
+	const std::unordered_map<std::type_index, std::shared_ptr<PoolBase>>& getPools() { return pool; } // for iteration
 
-	Handle create(const std::type_index& type, const std::string& name);
-	void destroy(const Handle& handle);
+	template <typename BaseType>
+	BaseType* access(const Handle& handle); // accessor for objects without directly getting pool by handle
 
-	template <typename Type>
-	Type* access(const Handle& handle);
-	template <typename Type, typename Function>
-	void forEach(const std::type_index& concrete, Function&& function);
-	template <typename Concrete, typename Function>
+	// for-each loops
+	template <typename BaseType, typename Function>
+	void forEach(const std::type_index& objectType, Function&& function);
+	template <typename ObjectType, typename Function>
 	void forEach(Function&& function);
 };
 
@@ -222,65 +293,21 @@ class Context {
 	std::string name;
 	int width, height;
 	GLFWwindow* glfwWindow;
-	std::unordered_map<std::type_index, std::shared_ptr<Manager>> manager;
+	std::unordered_map<std::type_index, std::unique_ptr<ManagerBase>> manager;
 public:
 	explicit Context(std::string name, int width, int height);
 	~Context();
 
 	GLFWwindow* getGlfwWindow() { return glfwWindow; }
-
-	template <typename Module>
-	void registerModule();
-	template <typename Module>
-	std::weak_ptr<Manager> getManager();
+	template <typename ModuleType>
+	void registerModuleType();
+	ManagerBase* getManager(std::type_index managerType);
 	template <typename ManagerType>
-	ManagerType* access();
-};
-
-
-
-
-/*---------*/
-/* Visitor */
-/*---------*/
-
-class Visitor {
-public:
-	virtual void visit(class Window& window) = 0;
-	virtual void visit(class WindowManager& windowManager) = 0;
-
-	virtual void visit(class ModelResource& modelResource) = 0;
-	virtual void visit(class ShaderResource& shaderResource) = 0;
-	virtual void visit(class ResourceManager& resourceManager) = 0;
-
-	virtual void visit(class Entity& entity) = 0;
-	virtual void visit(class EntityManager& entityManager) = 0;
-
-	virtual void visit(class RenderComponent& renderComponent) = 0;
-	virtual void visit(class TransformComponent& transformComponent) = 0;
-	virtual void visit(class CameraComponent& cameraComponent) = 0;
-	virtual void visit(class LightComponent& lightComponent) = 0;
-
+	ManagerType* getManager();
 
 };
 
-class EmptyVisitor : public Visitor {
-public:
-	void visit(Window& window) override {};
-	void visit(WindowManager& windowManager) override {};
 
-	void visit(ModelResource& modelResource) override {}
-	void visit(ShaderResource& shaderResource) override {}
-	void visit(ResourceManager& resourceManager) override {}
-
-	void visit(Entity& entity) override {}
-	void visit(EntityManager& entityManager) override {}
-
-	void visit(RenderComponent& renderComponent) override {}
-	void visit(TransformComponent& transformComponent) override {}
-	void visit(CameraComponent& cameraComponent) override {}
-	void visit(LightComponent& lightComponent) override {}
-};
 
 
 

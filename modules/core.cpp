@@ -1,36 +1,30 @@
 #include "core.h"
+#include "modules/entity.h"
 
 namespace ikhanchoi {
+
+Base::~Base() noexcept = default;
 
 /*---------*/
 /* Manager */
 /*---------*/
 
-void Manager::setManager(std::weak_ptr<Manager> manager) {
-    if (auto sharedManager = manager.lock())
-        this->manager[typeid(*sharedManager)] = manager;
-    else
-        throw std::invalid_argument("Error: (Manager::setManager) Manager pointer is expired or null.");
-}
 
-std::weak_ptr<Manager> Manager::getManager(std::type_index managerType) {
-    if (manager.find(managerType) == manager.end())
-        throw std::runtime_error("Error: (Manager::getManager) Manager type not found.");
-    return manager[managerType];
-}
-
-Handle Manager::create(const std::type_index& concrete, const std::string& name) {
-    if (pool.find(concrete) == pool.end())
-        throw std::runtime_error("Error: (Manager::create) Type not registered.");
-    std::unique_ptr<Object> object = factory[concrete](0, name);
+Handle ManagerBase::create(const std::type_index& objectType, const std::string& name) {
+    if (pool.find(objectType) == pool.end()) {
+		if (objectType == typeid(Entity))
+            throw std::runtime_error("Error: (Manager::create) Entity is not managed by the Pool system. Use direct instantiation.");
+		else
+            throw std::runtime_error("Error: (Manager::create) Type Pool not registered for: " + std::string(objectType.name()));
+	}
+    std::unique_ptr<Object> object = factory[objectType](0, name);
     if (!object)
         throw std::runtime_error("Error: (Manager::create) Failed to create object.");
-    Handle handle = pool[concrete]->add(object.get());
-    object->setId(handle.index);
+    Handle handle = pool[objectType]->add(object.get());
     return handle;
 }
 
-void Manager::destroy(const Handle& handle) {
+void ManagerBase::destroy(const Handle& handle) {
 	if (pool.find(handle.type) == pool.end())
         throw std::runtime_error("Error: (Manager::destroy) Module not found.");
     pool[handle.type]->remove(handle);
@@ -51,7 +45,7 @@ Context::Context(std::string name, int width, int height)
 #ifdef __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
-	glfwWindow = glfwCreateWindow(width, height, name.c_str(), nullptr, nullptr);
+	glfwWindow = glfwCreateWindow(width, height, this->name.c_str(), nullptr, nullptr);
 	if (glfwWindow == nullptr) {
 		std::cerr << "Error: (Window) Failed to create window." << '\n';
 		glfwTerminate();
@@ -154,16 +148,23 @@ Context::Context(std::string name, int width, int height)
 */
 }
 
+
+ManagerBase* Context::getManager(std::type_index managerType) {
+	if (manager.find(managerType) == manager.end())
+		throw std::runtime_error("Error: (Context::getManager) Module not registered." + std::string(managerType.name()));
+	return this->manager[managerType].get();
+}
+
+
 Context::~Context() {
 	try {
-		for (auto& [type, manager] : manager)
-			manager.reset();
+		for (auto& [moduleType, upcastedManager] : this->manager)
+			upcastedManager.reset();
 		glfwDestroyWindow(glfwWindow);
 		glfwTerminate();
 	} catch (const std::exception& e) {
-		std::cerr << "Error: (Context::~Context) " << e.what() << std::endl;
+		std::cerr << "Error: (Context::~Context) " << e.what() << '\n';
 	}
-
 }
 
 }

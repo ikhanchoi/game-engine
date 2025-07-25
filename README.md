@@ -90,21 +90,6 @@ Entity
 
 ## Visitor pattern for window rendering
 
-updater is introduced because window manager is not a system, but a manager for a module.
-visitor pattern is introduced instead of overloading-based pattern in order to
-- get run-time polymorphism for update method for example in `forEach<Module>(type, func)`,
-- extend easily other types of objects to do something.
-
-
-Double dispatch.
-
-`void update(Updater& updater) override { updater.update(*this); }`
-
-
-Since `Resource* resource`, we do not know the actual derived type of resource.
-Then, `resource->update(*this)` involves dynamic dispatch bt virtual functions, and `updater.update(*this)` involves static dispatch by overloading.
-
-
 
 
 

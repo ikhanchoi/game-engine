@@ -14,30 +14,27 @@ int main() {
 	auto context = std::make_unique<ikhanchoi::Context>("GLTF Viewer", 1280, 960);
 
 	// Module registration
-	context->registerModule<ikhanchoi::Window>();
-	auto* windowManager = context->access<ikhanchoi::WindowManager>();
-	windowManager->registerPool<ikhanchoi::Window>();
+	context->registerModuleType<ikhanchoi::WindowModule>();
+	auto* windowManager = context->getManager<ikhanchoi::WindowManager>();
+	context->registerModuleType<ikhanchoi::ResourceModule>();
+	auto* resourceManager = context->getManager<ikhanchoi::ResourceManager>();
+	context->registerModuleType<ikhanchoi::EntityModule>();
+	auto* entityManager = context->getManager<ikhanchoi::EntityManager>();
+	context->registerModuleType<ikhanchoi::ComponentModule>();
+	auto* componentManager = context->getManager<ikhanchoi::ComponentManager>();
 
-	context->registerModule<ikhanchoi::Resource>();
-	auto* resourceManager = context->access<ikhanchoi::ResourceManager>();
-	resourceManager->registerType<ikhanchoi::Resource, ikhanchoi::ModelResource>();
-	resourceManager->registerPool<ikhanchoi::ModelResource>();
-	resourceManager->registerType<ikhanchoi::Resource, ikhanchoi::ShaderResource>();
-	resourceManager->registerPool<ikhanchoi::ShaderResource>();
+	// Object registration
+	windowManager->registerObjectType<ikhanchoi::ManagerWindow>();
+	resourceManager->registerObjectType<ikhanchoi::ModelResource>();
+	resourceManager->registerObjectType<ikhanchoi::ShaderResource>();
+	entityManager->registerObjectType<ikhanchoi::Entity>();
 
-
-
-	context->registerModule<ikhanchoi::Entity>();
-	auto* entityManager = context->access<ikhanchoi::EntityManager>();
-	// entityManager->registerPool<ikhanchoi::Entity>();
 
 
 	// Add objects
 
 	//  there is a default window for window manager
-	windowManager->addWindow<ikhanchoi::Window>("Resource manager", context->getManager<ikhanchoi::Resource>());
-
-
+	windowManager->addWindow<ikhanchoi::ManagerWindow>("Resource manager", resourceManager);
 
 
 	auto boomBox = resourceManager->addResource<ikhanchoi::ModelResource>("boomBox", "BoomBox/BoomBox.gltf");

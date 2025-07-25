@@ -8,61 +8,66 @@
 
 namespace ikhanchoi {
 
-using Content = std::variant<std::weak_ptr<Object>, std::weak_ptr<Manager>>;
+using Content = std::variant<Object*, ManagerBase*>;
 
-class Window : public Object {
-	Content content;
+class WindowModule : public CRTPModule<WindowModule> {
 public:
-	explicit Window(unsigned int id, const std::string& name) : Object(id, name) {}
-	~Window() override = default;
-	void visit(Visitor& visitor) override { visitor.visit(*this); }
-	static std::shared_ptr<Manager> generateManager() {
-		return std::move(std::dynamic_pointer_cast<Manager>(std::make_shared<WindowManager>())); }
-	static std::string getTypeName() { return "Window"; }
+	static std::unique_ptr<ManagerBase> generateManager();
+};
 
-	void loadContent(Content content) { this->content = content; }
-	Content getContent() { return content; }
+
+class WindowBase : public Base {
+public:
+	virtual void loadContent(Content content) = 0;
+};
+
+class ManagerWindow : public WindowBase, public CRTPObject<ManagerWindow> {
+	ManagerBase* content;
+public:
+	explicit ManagerWindow(uint32_t id, const std::string& name) : CRTPObject<ManagerWindow>(id, name) {}
+
+	void loadContent(Content content) override {
+		this->content = std::get<ManagerBase*>(content);
+	}
+	ManagerBase* getContent() { return content; }
+	static std::string getTypeName() { return "ManagerWindow"; }
 };
 
 
 
 class WindowRenderer : public EmptyVisitor {
 public:
-	void visit(ModelResource& modelResource) override;
-	void visit(ShaderResource& shaderResource) override;
-	void visit(ResourceManager& resourceManager) override;
+	void visit(ManagerWindow& managerWindow) const override;
 
-	void visit(Entity& entity) override;
-	void visit(EntityManager& entityManager) override;
+	void visit(ModelResource& modelResource) const override;
+	void visit(ShaderResource& shaderResource) const override;
 
-	void visit(Window& window) override;
-	void visit(WindowManager& windowManager) override;
+	void visit(Entity& entity) const override;
+
 };
 
 
 
-class WindowManager : public Manager {
+class WindowManager : public ManagerBase {
 private:
 	bool demo = false;
 	WindowRenderer windowRenderer;
 public:
 	explicit WindowManager();
 	~WindowManager() override;
-	void visit(Visitor& visitor) override { visitor.visit(*this); }
-	void render() { visit(windowRenderer); };
 
-	bool* accessDemo() { return &demo; }
+	void render();
 
-	Handle addWindow(const std::type_index& windowConcrete, const std::string& name, Content content) {
-		if (pool.find(windowConcrete) == pool.end())
+	Handle addWindow(const std::type_index& windowObjectType, const std::string& name, Content content) {
+		if (pool.find(windowObjectType) == pool.end())
 			throw std::runtime_error("Error: (WindowManager::addWindow) Window type not registered.");
-		auto handle = create(windowConcrete, name);
-		this->access<Window>(handle)->loadContent(content);
+		auto handle = create(windowObjectType, name);
+		this->access<WindowBase>(handle)->loadContent(content);
 		return handle;
 	}
 	template <typename WindowType>
 	Handle addWindow(const std::string& name, Content content) {
-		static_assert(std::is_base_of_v<Window, WindowType>);
+		static_assert(std::is_base_of_v<WindowBase, WindowType>);
 		return addWindow(typeid(WindowType), name, content);
 	}
 };

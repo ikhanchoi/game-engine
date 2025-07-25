@@ -7,6 +7,10 @@
 namespace ikhanchoi {
 
 
+std::unique_ptr<ManagerBase> ResourceModule::generateManager() {
+	return std::make_unique<ResourceManager>();
+}
+
 /*---------------*/
 /* ModelResource */
 /*---------------*/
@@ -64,7 +68,6 @@ void ModelResource::loadTextureObjects() {
 		textureObjects.push_back(textureObject);
 	}
 }
-
 
 
 

@@ -5,26 +5,19 @@
 #include <typeindex>
 #include <vector>
 #include <fstream>
-#include <iostream>
 #include <sstream>
+
+#include "core/managers/pool_manager_base.h"
 
 #include <GL/glew.h>
 #include "tiny_gltf.h"
 
-#include "modules/core.h"
 
 namespace ikhanchoi {
 
-// A module for resources.
-class ResourceModule : public CRTPModule<ResourceModule> {
+class ResourceBase {
 public:
-	static std::unique_ptr<ManagerBase> generateManager(Context* context);
-};
-
-
-// An abstract base class for resource objects.
-class ResourceBase : public Base {
-public:
+	virtual ~ResourceBase() = default;
 	virtual void loadResource(const std::string& path) = 0; // path after ../assets/models/ or ../assets/shaders/
 };
 
@@ -92,9 +85,9 @@ public:
 
 
 
-class ResourceManager : public ManagerBase {
+class ResourceManager : public PoolManagerBase {
 public:
-	explicit ResourceManager(Context* context) : ManagerBase(context) {}
+	explicit ResourceManager(Context* context) : PoolManagerBase(context) {}
 
 	Handle addResource(const std::type_index& resourceType, const std::string& name, const std::string& path) {
 		if (pool.find(resourceType) == pool.end())

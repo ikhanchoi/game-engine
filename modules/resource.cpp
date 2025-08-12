@@ -7,9 +7,6 @@
 namespace ikhanchoi {
 
 
-std::unique_ptr<ManagerBase> ResourceModule::generateManager(Context* context) {
-	return std::make_unique<ResourceManager>(context);
-}
 
 /*---------------*/
 /* ModelResource */
@@ -111,10 +108,6 @@ void ShaderResource::loadShader(const std::string& path) {
 }
 
 
-
-/*-----------------*/
-/* ResourceManager */
-/*-----------------*/
 
 
 

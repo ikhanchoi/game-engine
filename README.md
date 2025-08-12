@@ -109,3 +109,73 @@ Concrete: leaves
 Component와 System은 (Module부터) 똑같은 상속계층구조를 가지게끔 하자!
 
 Window manager가 이렇게 모든 Concrete Component별로 window render 함수를 분화시키는 것도 이상하다.
+
+
+
+
+
+
+
+
+
+
+// Each concrete class actually inherits the CRTP class `Object` to implement the visit method.
+/*
+ * The virtual inheritance is used to cast the object to the correct type in run-time.
+ * For instance, if a class `ModelResource` inherits from `Object` class and `Resource` class,
+ * and if `Resource` class inherits from `Module` class, then in order to cast a pointer
+ * `Resource* modelResource` that points to a `ModelResource` object, we can use
+ * `dynamic_cast<Object*>(modelResource)` to get a pointer to the base class.
+ * This is because `Object` is a virtual base class of `ModelResource`, allowing us to safely
+ * down-cast it to the correct type.
+ */
+
+/*
+ * The Visitor pattern is one technique to achieve run-time polymorphism.
+ * The accept method will be implemented within CRTP.
+ *
+ * It is particularly useful for adding new operations to an existing object hierarchy
+ * without modifying the classes within that hierarchy (adhering to the Open/Closed Principle),
+ * which prevents scattering functionally similar but type-specific method implementations
+ * across various source files.
+ *
+ * It also enables reference to unique member variables of concrete derived classes from a
+ * common interface pointer, which the usual virtual functions cannot provide.
+ */
+
+// An abstract CRTP base class that injects the implementation of the visit method to each object
+
+/* The CRTPObject class is a CRTP base class that provides the implementation of the visit method.
+ * It is used to avoid virtual inheritance and to provide a compile-time polymorphism.
+ * The ObjectType is the concrete class that inherits from CRTPObject.
+ * The ObjectType should be derived from Object, and it should not be abstract. */
+
+/* (1) The class Visitor should be defined before this method, and forward declaration of Visitor is not sufficient. */
+
+
+
+/*
+template <typename T>
+struct Tree {
+	T data;
+    std::string name;
+    std::vector<std::shared_ptr<Tree>> children;
+	Tree(T data, const std::string& name) : data(data), name(name) {}
+};
+
+template <typename T>
+std::shared_ptr<Tree<T>> find(const std::shared_ptr<Tree<T>>& node, const T& target) {
+    if (node->data == target)
+        return node;
+    for (const auto& child : node->children)
+        if (auto found = find(child, target))
+            return found;
+    return nullptr;
+}
+*/
+
+// A base class for managers.
+// creates and destroys objects by pools, and provides a method to round over the objects.
+
+// pooling is only used for resources and components.
+// Without pooling, manager base only provides a context carrier.

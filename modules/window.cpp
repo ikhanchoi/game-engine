@@ -3,18 +3,21 @@
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "imgui_internal.h"
 #include "misc/cpp/imgui_stdlib.h"
 
+#include "core/context/context.h"
 #include "modules/entity.h"
 #include "modules/event.h"
 #include "modules/resource.h"
 
+
+
+#include <GLFW/glfw3.h>
+
 namespace ikhanchoi {
 
 
-std::unique_ptr<ManagerBase> WindowModule::generateManager(Context* context) {
-	return std::make_unique<WindowManager>(context);
-}
 
 /*----------*/
 /* Resource */
@@ -94,7 +97,7 @@ void WindowRenderer::visit(Entity& entity) const {
 		ImGui::Text("Drag and drop to set components.");
 		if (ImGui::BeginDragDropTarget()) { // TODO
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Component")) {
-				auto data = (std::pair<std::type_index, std::shared_ptr<Component>>*) payload->Data;
+				auto data = (std::pair<std::type_index, std::shared_ptr<ComponentBase>>*) payload->Data;
 				auto componentType = (*data).first;
 				auto component = (*data).second;
 				// set component event?
@@ -165,7 +168,16 @@ void WindowRenderer::visit(Entity& entity) const {
 /*---------*/
 
 
+void WindowRenderer::visit(MainViewWindow& mainViewWindow) const {
+	ImGui::PushID(&mainViewWindow);
+	ImGui::Begin("Main View Window");
+	ImGui::End();
+	ImGui::PopID();
+}
+
+
 void WindowRenderer::visit(AssetWindow& assetWindow) const {
+
 	ImGui::PushID(&assetWindow);
 	ImGui::Begin("Asset Window");
 	auto* resourceManager = assetWindow.getResourceManager();
@@ -252,15 +264,18 @@ WindowManager::WindowManager(Context* context) : ManagerBase(context), windowRen
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	ImGui::StyleColorsDark();
 	ImGui_ImplGlfw_InitForOpenGL(glfwGetCurrentContext(), true);
 	ImGui_ImplOpenGL3_Init("#version 330");
 	windowRenderer.setContext(context);
 
-	assetWindow = std::make_unique<AssetWindow>(0, "Asset Window", context->getManager<ResourceManager>());
-	hierarchyWindow = std::make_unique<HierarchyWindow>(1, "Hierarchy Window", context->getManager<EntityManager>());
-	inspectorWindow = std::make_unique<InspectorWindow>(2, "Inspector Window", context->getManager<ComponentManager>());
-	statisticsWindow = std::make_unique<StatisticsWindow>(3, "Statistics Window");
+	mainViewWindow = std::make_unique<MainViewWindow>(0, "Main View Window");
+	assetWindow = std::make_unique<AssetWindow>(1, "Asset Window", context->getManager<ResourceManager>());
+	hierarchyWindow = std::make_unique<HierarchyWindow>(2, "Hierarchy Window", context->getManager<EntityManager>());
+	inspectorWindow = std::make_unique<InspectorWindow>(3, "Inspector Window", context->getManager<ComponentManager>());
+	statisticsWindow = std::make_unique<StatisticsWindow>(4, "Statistics Window");
+
 
 }
 
@@ -272,6 +287,33 @@ WindowManager::~WindowManager() {
 
 void WindowManager::render() {
 	ImGui_ImplOpenGL3_NewFrame(), ImGui_ImplGlfw_NewFrame(), ImGui::NewFrame();
+
+	ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->WorkPos);
+    ImGui::SetNextWindowSize(viewport->WorkSize);
+    ImGui::SetNextWindowViewport(viewport->ID);
+	ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+                                    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+                                    ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus |
+                                    ImGuiWindowFlags_NoBackground;
+    ImGui::Begin("DockSpace Window", nullptr, window_flags);
+    ImGui::DockSpace(ImGui::GetID("DockSpace"), ImVec2(0.0f, 0.0f));
+	if (!dockLayoutInitialized) {
+		ImGuiID dock_id = ImGui::GetID("DockSpace");
+		ImGui::DockBuilderRemoveNode(dock_id);
+		ImGui::DockBuilderAddNode(dock_id, ImGuiDockNodeFlags_DockSpace);
+		ImGui::DockBuilderSetNodeSize(dock_id, viewport->WorkSize);
+		ImGuiID dock_id_inspector = ImGui::DockBuilderSplitNode(dock_id, ImGuiDir_Right, 0.20f, nullptr, &dock_id);
+        ImGuiID dock_id_asset = ImGui::DockBuilderSplitNode(dock_id, ImGuiDir_Down, 0.25f, nullptr, &dock_id);
+        ImGuiID dock_id_hierarchy = ImGui::DockBuilderSplitNode(dock_id, ImGuiDir_Left, 0.25f, nullptr, &dock_id);
+		ImGui::DockBuilderDockWindow("Hierarchy Window", dock_id_hierarchy);
+		ImGui::DockBuilderDockWindow("Asset Window", dock_id_asset);
+		ImGui::DockBuilderDockWindow("Main View Window", dock_id);
+		ImGui::DockBuilderDockWindow("Inspector Window", dock_id_inspector);
+		ImGui::DockBuilderFinish(dock_id);
+		dockLayoutInitialized = true;
+	}
+    ImGui::End();
 
 	if (ImGui::BeginMainMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
@@ -301,9 +343,9 @@ void WindowManager::render() {
 		ImGui::EndMainMenuBar();
 	}
 
-
 	if (demoActive)
 		ImGui::ShowDemoWindow();
+	mainViewWindow->accept(windowRenderer);
 	if (assetWindow->isActive())
 		assetWindow->accept(windowRenderer);
 	if (hierarchyWindow->isActive())
@@ -313,10 +355,8 @@ void WindowManager::render() {
 	if (statisticsWindow->isActive())
 		statisticsWindow->accept(windowRenderer);
 
-
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
 }
 
 

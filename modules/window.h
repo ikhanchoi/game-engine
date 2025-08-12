@@ -12,64 +12,68 @@ using Content = std::variant<Object*, ManagerBase*>;
 
 class WindowModule : public CRTPModule<WindowModule> {
 public:
-	static std::unique_ptr<ManagerBase> generateManager();
+	static std::unique_ptr<ManagerBase> generateManager(Context* context);
 };
 
 
 class WindowBase : public Base {
 public:
-	virtual void loadContent(Content content) = 0;
-};
-
-class ManagerWindow : public WindowBase, public CRTPObject<ManagerWindow> {
-	ManagerBase* content;
-public:
-	explicit ManagerWindow(uint32_t id, const std::string& name) : CRTPObject<ManagerWindow>(id, name) {}
-
-	void loadContent(Content content) override {
-		this->content = std::get<ManagerBase*>(content);
-	}
-	ManagerBase* getContent() { return content; }
-	static std::string getTypeName() { return "ManagerWindow"; }
 };
 
 
 
-class WindowRenderer : public EmptyVisitor {
+
+
+class AssetWindow : public WindowBase, public CRTPObject<AssetWindow> {
+	ResourceManager* resourceManager;
 public:
-	void visit(ManagerWindow& managerWindow) const override;
+	explicit AssetWindow(uint32_t id, const std::string& name, ResourceManager* resourceManager = nullptr)
+		: CRTPObject<AssetWindow>(id, name), resourceManager(resourceManager) {}
 
-	void visit(ModelResource& modelResource) const override;
-	void visit(ShaderResource& shaderResource) const override;
+	ResourceManager* getResourceManager() const { return resourceManager; }
+};
 
-	void visit(Entity& entity) const override;
+class HierarchyWindow : public WindowBase, public CRTPObject<HierarchyWindow> {
+	EntityManager* entityManager;
+public:
+	explicit HierarchyWindow(uint32_t id, const std::string& name, EntityManager* entityManager = nullptr)
+		: CRTPObject<HierarchyWindow>(id, name), entityManager(entityManager) {}
 
+	EntityManager* getEntityManager() const { return entityManager; }
+};
+
+
+class InspectorWindow : public WindowBase, public CRTPObject<InspectorWindow> {
+	ComponentManager* componentManager;
+public:
+	explicit InspectorWindow(uint32_t id, const std::string& name, ComponentManager* componentManager = nullptr)
+		: CRTPObject<InspectorWindow>(id, name), componentManager(componentManager) {}
+
+	ComponentManager* getComponentManager() const { return componentManager; }
+};
+
+class StatisticsWindow : public WindowBase, public CRTPObject<StatisticsWindow> {
+public:
+	explicit StatisticsWindow(uint32_t id, const std::string& name)
+		: CRTPObject<StatisticsWindow>(id, name) {}
 };
 
 
 
 class WindowManager : public ManagerBase {
 private:
-	bool demo = false;
+	std::unique_ptr<AssetWindow> assetWindow;
+	std::unique_ptr<HierarchyWindow> hierarchyWindow;
+	std::unique_ptr<InspectorWindow> inspectorWindow;
+	std::unique_ptr<StatisticsWindow> statisticsWindow;
+	bool demoActive = false;
 	WindowRenderer windowRenderer;
 public:
-	explicit WindowManager();
+	explicit WindowManager(Context* context);
 	~WindowManager() override;
 
 	void render();
 
-	Handle addWindow(const std::type_index& windowObjectType, const std::string& name, Content content) {
-		if (pool.find(windowObjectType) == pool.end())
-			throw std::runtime_error("Error: (WindowManager::addWindow) Window type not registered.");
-		auto handle = create(windowObjectType, name);
-		this->access<WindowBase>(handle)->loadContent(content);
-		return handle;
-	}
-	template <typename WindowType>
-	Handle addWindow(const std::string& name, Content content) {
-		static_assert(std::is_base_of_v<WindowBase, WindowType>);
-		return addWindow(typeid(WindowType), name, content);
-	}
 };
 
 

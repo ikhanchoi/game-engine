@@ -25,7 +25,10 @@ namespace ikhanchoi {
 
 class Visitor {
 public:
-	virtual void visit(class ManagerWindow& managerWindow) const = 0;
+	virtual void visit(class AssetWindow& assetWindow) const = 0;
+	virtual void visit(class HierarchyWindow& hierarchyWindow) const = 0;
+	virtual void visit(class InspectorWindow& inspectorWindow) const = 0;
+	virtual void visit(class StatisticsWindow& statisticsWindow) const = 0;
 
 	virtual void visit(class ModelResource& modelResource) const = 0;
 	virtual void visit(class ShaderResource& shaderResource) const = 0;
@@ -45,7 +48,10 @@ public:
 	void setContext(class Context* context) { this->context = context; }
 	Context* getContext() const { return context; }
 
-	void visit(ManagerWindow& managerWindow) const override {};
+	void visit(AssetWindow& assetWindow) const override {}
+	void visit(HierarchyWindow& hierarchyWindow) const override {}
+	void visit(InspectorWindow& inspectorWindow) const override {}
+	void visit(StatisticsWindow& statisticsWindow) const override {}
 
 	void visit(ModelResource& modelResource) const override {}
 	void visit(ShaderResource& shaderResource) const override {}
@@ -59,6 +65,22 @@ public:
 };
 
 
+class WindowRenderer : public EmptyVisitor {
+public:
+	void visit(AssetWindow& assetWindow) const override;
+	void visit(HierarchyWindow& hierarchyWindow) const override;
+	void visit(InspectorWindow& inspectorWindow) const override;
+	void visit(StatisticsWindow& statisticsWindow) const override;
+
+	void visit(ModelResource& modelResource) const override;
+	void visit(ShaderResource& shaderResource) const override;
+
+	void visit(Entity& entity) const override;
+
+};
+
+
+
 /*--------*/
 /* Module */
 /*--------*/
@@ -68,9 +90,9 @@ public:
 template<typename ModuleType>
 class CRTPModule {
 public:
-    static std::unique_ptr<class ManagerBase> generateManager() {
+    static std::unique_ptr<class ManagerBase> generateManager(class Context* context) {
         static_assert(std::is_same_v<decltype(ModuleType::generateManager()), std::unique_ptr<ManagerBase>>);
-        return ModuleType::generateManager();
+        return ModuleType::generateManager(context);
     }
 };
 
@@ -247,6 +269,7 @@ protected:
 	Handle create(const std::type_index& type, const std::string& name); // creator for objects
 	void destroy(const Handle& handle); // destroyer for objects
 public:
+	explicit ManagerBase(Context* context) : context(context) {};
 	virtual ~ManagerBase() = default;
 
 	// setters and getters
@@ -265,7 +288,8 @@ public:
 	template <typename ObjectType, typename Function>
 	void forEach(Function&& function);
 };
-
+// pooling is only used for resources and components.
+// Without pooling, manager base only provides a context carrier.
 
 class WindowManager;
 class ResourceManager;

@@ -13,7 +13,7 @@ namespace ikhanchoi {
 
 class EntityModule : public CRTPModule<EntityModule> {
 public:
-	static std::unique_ptr<ManagerBase> generateManager();
+	static std::unique_ptr<ManagerBase> generateManager(Context* context);
 };
 
 
@@ -51,6 +51,7 @@ class EntityManager : public ManagerBase {
 	std::vector<std::unique_ptr<Entity>> entities; // these are top entities.
 	uint32_t globalEntityId = 0; // necessary because entities are not managed by pools.
 public:
+	explicit EntityManager(Context* context) : ManagerBase(context), entities(), globalEntityId(0) {}
 	const std::vector<std::unique_ptr<Entity>>& getEntities() { return entities; }
 
 	Entity* addEntity(const std::string& name, Entity* parent);

@@ -7,8 +7,8 @@
 namespace ikhanchoi {
 
 
-std::unique_ptr<ManagerBase> ResourceModule::generateManager() {
-	return std::make_unique<ResourceManager>();
+std::unique_ptr<ManagerBase> ResourceModule::generateManager(Context* context) {
+	return std::make_unique<ResourceManager>(context);
 }
 
 /*---------------*/

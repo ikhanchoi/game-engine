@@ -18,7 +18,7 @@ namespace ikhanchoi {
 // A module for resources.
 class ResourceModule : public CRTPModule<ResourceModule> {
 public:
-	static std::unique_ptr<ManagerBase> generateManager();
+	static std::unique_ptr<ManagerBase> generateManager(Context* context);
 };
 
 
@@ -94,6 +94,8 @@ public:
 
 class ResourceManager : public ManagerBase {
 public:
+	explicit ResourceManager(Context* context) : ManagerBase(context) {}
+
 	Handle addResource(const std::type_index& resourceType, const std::string& name, const std::string& path) {
 		if (pool.find(resourceType) == pool.end())
 			throw std::runtime_error("Error: (ResourceManager::addResource) Resource type not registered");

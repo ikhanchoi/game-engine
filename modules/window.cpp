@@ -12,8 +12,8 @@
 namespace ikhanchoi {
 
 
-std::unique_ptr<ManagerBase> WindowModule::generateManager() {
-	return std::make_unique<WindowManager>();
+std::unique_ptr<ManagerBase> WindowModule::generateManager(Context* context) {
+	return std::make_unique<WindowManager>(context);
 }
 
 /*----------*/
@@ -144,62 +144,99 @@ void WindowRenderer::visit(Entity& entity) const {
 
 
 
-/*--------*/
-/* Window */
-/*--------*/
 
 
-void WindowRenderer::visit(ManagerWindow& managerWindow) const {
-	ImGui::PushID(&managerWindow);
-	ImGui::Begin(managerWindow.getName().c_str());
-	auto* manager = managerWindow.getContent();
-	// render the content depending on its manager type
-	if (typeid(*manager) == typeid(ResourceManager)) {
-		ImGui::BeginTabBar("Resources", ImGuiTabBarFlags_::ImGuiTabBarFlags_Reorderable);
-		for (const auto &[objectType, pool]: manager->getPools()) {
-			ImGui::PushID(objectType.name());
-			if (ImGui::BeginTabItem(objectType.name())) {
-				manager->forEach<ResourceBase>(objectType, [this](ResourceBase* upcastedResource) {
-					auto* untypedResource = dynamic_cast<Object*>(upcastedResource);
-					if (untypedResource->isActive())
-						untypedResource->accept(*this);
-				});
-				ImGui::EndTabItem();
-			}
-			ImGui::PopID();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*---------*/
+/* Windows */
+/*---------*/
+
+
+void WindowRenderer::visit(AssetWindow& assetWindow) const {
+	ImGui::PushID(&assetWindow);
+	ImGui::Begin("Asset Window");
+	auto* resourceManager = assetWindow.getResourceManager();
+	ImGui::BeginTabBar("Resources", ImGuiTabBarFlags_::ImGuiTabBarFlags_Reorderable);
+	for (const auto &[objectType, pool]: resourceManager->getPools()) {
+		ImGui::PushID(objectType.name());
+		if (ImGui::BeginTabItem(objectType.name())) {
+			resourceManager->forEach<ResourceBase>(objectType, [this](ResourceBase* upcastedResource) {
+				auto* untypedResource = dynamic_cast<Object*>(upcastedResource);
+				if (untypedResource->isActive())
+					untypedResource->accept(*this);
+			});
+			ImGui::EndTabItem();
 		}
-		ImGui::EndTabBar();
+		ImGui::PopID();
 	}
-	else if (typeid(*manager) == typeid(EntityManager)) {
-		auto entityManager = dynamic_cast<EntityManager*>(manager);
-		for (const auto& entity : entityManager->getEntities()) {
-			if (entity == nullptr)
-				continue;
-			entity->accept(*this);
-		}
+	ImGui::EndTabBar();
+	ImGui::End();
+	ImGui::PopID();
+}
 
-		if (ImGui::Button("Add entity", ImVec2(-1, 0)))
-			ImGui::OpenPopup("Add entity");
-		ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-		if (ImGui::BeginPopupModal("Add entity", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-			std::string name;
-			if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
-			ImGui::InputText("Name", &name);
-			if (ImGui::Button("OK", ImVec2((ImGui::GetContentRegionAvail().x-ImGui::GetStyle().ItemSpacing.x)*0.5f, 0))
-					|| (ImGui::IsKeyPressed(ImGuiKey_Enter) && ImGui::IsWindowFocused())) {
-				ImGui::CloseCurrentPopup();
-				entityManager->addEntity(name, nullptr);
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Cancel", ImVec2(-1, 0))
-					|| (ImGui::IsKeyPressed(ImGuiKey_Escape) && ImGui::IsWindowFocused()))
-				ImGui::CloseCurrentPopup();
-			ImGui::EndPopup();
-		}
 
+
+
+void WindowRenderer::visit(HierarchyWindow& hierarchyWindow) const {
+	ImGui::PushID(&hierarchyWindow);
+	ImGui::Begin("Hierarchy Window");
+	auto* entityManager = hierarchyWindow.getEntityManager();
+	for (const auto& entity : entityManager->getEntities()) {
+		if (entity == nullptr)
+			continue;
+		entity->accept(*this);
 	}
 
+	if (ImGui::Button("Add entity", ImVec2(-1, 0)))
+		ImGui::OpenPopup("Add entity");
+	ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+	if (ImGui::BeginPopupModal("Add entity", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+		std::string name;
+		if (ImGui::IsWindowAppearing()) ImGui::SetKeyboardFocusHere();
+		ImGui::InputText("Name", &name);
+		if (ImGui::Button("OK", ImVec2((ImGui::GetContentRegionAvail().x-ImGui::GetStyle().ItemSpacing.x)*0.5f, 0))
+				|| (ImGui::IsKeyPressed(ImGuiKey_Enter) && ImGui::IsWindowFocused())) {
+			ImGui::CloseCurrentPopup();
+			entityManager->addEntity(name, nullptr);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Cancel", ImVec2(-1, 0))
+				|| (ImGui::IsKeyPressed(ImGuiKey_Escape) && ImGui::IsWindowFocused()))
+			ImGui::CloseCurrentPopup();
+		ImGui::EndPopup();
+	}
 
+	ImGui::End();
+	ImGui::PopID();
+}
+
+void WindowRenderer::visit(InspectorWindow& inspectorWindow) const {
+	ImGui::PushID(&inspectorWindow);
+	ImGui::Begin("Inspector Window");
+
+	ImGui::End();
+	ImGui::PopID();
+}
+
+
+
+void WindowRenderer::visit(StatisticsWindow& statisticsWindow) const {
+	ImGui::PushID(&statisticsWindow);
+	ImGui::Begin("Statistics Window");
+	ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 	ImGui::End();
 	ImGui::PopID();
 }
@@ -211,7 +248,7 @@ void WindowRenderer::visit(ManagerWindow& managerWindow) const {
 /*----------------*/
 
 
-WindowManager::WindowManager() {
+WindowManager::WindowManager(Context* context) : ManagerBase(context), windowRenderer() {
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -219,6 +256,12 @@ WindowManager::WindowManager() {
 	ImGui_ImplGlfw_InitForOpenGL(glfwGetCurrentContext(), true);
 	ImGui_ImplOpenGL3_Init("#version 330");
 	windowRenderer.setContext(context);
+
+	assetWindow = std::make_unique<AssetWindow>(0, "Asset Window", context->getManager<ResourceManager>());
+	hierarchyWindow = std::make_unique<HierarchyWindow>(1, "Hierarchy Window", context->getManager<EntityManager>());
+	inspectorWindow = std::make_unique<InspectorWindow>(2, "Inspector Window", context->getManager<ComponentManager>());
+	statisticsWindow = std::make_unique<StatisticsWindow>(3, "Statistics Window");
+
 }
 
 WindowManager::~WindowManager() {
@@ -229,19 +272,48 @@ WindowManager::~WindowManager() {
 
 void WindowManager::render() {
 	ImGui_ImplOpenGL3_NewFrame(), ImGui_ImplGlfw_NewFrame(), ImGui::NewFrame();
-	ImGui::Begin("Window Manager");
-	ImGui::Checkbox("Demo window", &demo);
-	forEach<ManagerWindow>([](ManagerWindow* managerWindow) {
-		ImGui::Checkbox((managerWindow->getName() + " window").c_str(), managerWindow->accessActive());
-	});
-	ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-	ImGui::End();
-	if (demo)
+
+	if (ImGui::BeginMainMenuBar()) {
+		if (ImGui::BeginMenu("File")) {
+			if (ImGui::MenuItem("Open", "Ctrl+O")) {
+			}
+			if (ImGui::MenuItem("Save", "Ctrl+S")) {
+			}
+			if (ImGui::MenuItem("Exit", "Alt+F4")) {
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Edit")) {
+			if (ImGui::MenuItem("Undo", "Ctrl+Z")) {
+			}
+			if (ImGui::MenuItem("Redo", "Ctrl+Y", false, false)) {
+			}
+			ImGui::EndMenu();
+		}
+		if (ImGui::BeginMenu("Windows")) {
+			ImGui::MenuItem("Demo window", nullptr, &demoActive);
+			ImGui::MenuItem("Asset window", nullptr, assetWindow->accessActive());
+			ImGui::MenuItem("Hierarchy window", nullptr, hierarchyWindow->accessActive());
+			ImGui::MenuItem("Inspector window", nullptr, inspectorWindow->accessActive());
+			ImGui::MenuItem("Statistics window", nullptr, statisticsWindow->accessActive());
+			ImGui::EndMenu();
+		}
+		ImGui::EndMainMenuBar();
+	}
+
+
+	if (demoActive)
 		ImGui::ShowDemoWindow();
-	forEach<ManagerWindow>([this](ManagerWindow* managerWindow) {
-		if (managerWindow->isActive())
-			managerWindow->accept(windowRenderer);
-	});
+	if (assetWindow->isActive())
+		assetWindow->accept(windowRenderer);
+	if (hierarchyWindow->isActive())
+		hierarchyWindow->accept(windowRenderer);
+	if (inspectorWindow->isActive())
+		inspectorWindow->accept(windowRenderer);
+	if (statisticsWindow->isActive())
+		statisticsWindow->accept(windowRenderer);
+
+
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 

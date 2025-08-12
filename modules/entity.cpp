@@ -3,8 +3,8 @@
 namespace ikhanchoi {
 
 
-std::unique_ptr<ManagerBase> EntityModule::generateManager() {
-	return std::make_unique<EntityManager>();
+std::unique_ptr<ManagerBase> EntityModule::generateManager(Context* context) {
+	return std::make_unique<EntityManager>(context);
 }
 
 

@@ -11,7 +11,7 @@ namespace ikhanchoi {
 
 class ComponentModule : public CRTPModule<ComponentModule> {
 public:
-	static std::unique_ptr<ManagerBase> generateManager();
+	static std::unique_ptr<ManagerBase> generateManager(Context* context);
 };
 
 
@@ -25,6 +25,9 @@ class RenderComponent : public ComponentBase, public CRTPObject<RenderComponent>
 };
 
 class ComponentManager : public ManagerBase {
+public:
+	explicit ComponentManager(Context* context) : ManagerBase(context) {}
+
 
 };
 

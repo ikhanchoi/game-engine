@@ -14,27 +14,23 @@ int main() {
 	auto context = std::make_unique<ikhanchoi::Context>("GLTF Viewer", 1280, 960);
 
 	// Module registration
-	context->registerModuleType<ikhanchoi::WindowModule>();
-	auto* windowManager = context->getManager<ikhanchoi::WindowManager>();
 	context->registerModuleType<ikhanchoi::ResourceModule>();
 	auto* resourceManager = context->getManager<ikhanchoi::ResourceManager>();
 	context->registerModuleType<ikhanchoi::EntityModule>();
 	auto* entityManager = context->getManager<ikhanchoi::EntityManager>();
 	context->registerModuleType<ikhanchoi::ComponentModule>();
 	auto* componentManager = context->getManager<ikhanchoi::ComponentManager>();
+	context->registerModuleType<ikhanchoi::WindowModule>();
+	auto* windowManager = context->getManager<ikhanchoi::WindowManager>();
 
 	// Object registration
-	windowManager->registerObjectType<ikhanchoi::ManagerWindow>();
 	resourceManager->registerObjectType<ikhanchoi::ModelResource>();
 	resourceManager->registerObjectType<ikhanchoi::ShaderResource>();
-	entityManager->registerObjectType<ikhanchoi::Entity>();
 
 
 
 	// Add objects
 
-	//  there is a default window for window manager
-	windowManager->addWindow<ikhanchoi::ManagerWindow>("Resource manager", resourceManager);
 
 
 	auto boomBox = resourceManager->addResource<ikhanchoi::ModelResource>("boomBox", "BoomBox/BoomBox.gltf");

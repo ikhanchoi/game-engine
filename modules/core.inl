@@ -130,14 +130,13 @@ void ManagerBase::forEach(Function&& function) {
 
 template <typename ModuleType>
 void Context::registerModuleType() {
-	auto newManager = ModuleType::generateManager();
+	auto newManager = ModuleType::generateManager(this);
 	auto& managerType = typeid(*newManager);
 	if (manager.find(managerType) != manager.end())
 		throw std::runtime_error("Error: (Context::registerModule) Manager type already registered.");
 	manager[managerType] = std::move(newManager);
 	if (!manager[managerType])
 		throw std::runtime_error("Error: (Context::registerModule) Failed to create manager.");
-	manager[managerType]->setContext(this); // set owner context to the manager
 }
 
 template <typename ManagerType>

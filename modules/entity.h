@@ -6,19 +6,15 @@
 #include <unordered_map>
 #include <vector>
 
-#include "modules/core.h"
 #include "modules/component.h"
 
 namespace ikhanchoi {
 
-class EntityModule : public CRTPModule<EntityModule> {
+
+
+class EntityBase {
 public:
-	static std::unique_ptr<ManagerBase> generateManager(Context* context);
-};
-
-
-class EntityBase : public Base {
-
+	virtual ~EntityBase() = default;
 };
 
 
@@ -28,6 +24,7 @@ class Entity : public EntityBase, public CRTPObject<Entity> {
 	Entity* parent; // nullptr if this is a top entity
 public:
 	explicit Entity(unsigned int id, const std::string& name) : CRTPObject(id, name), children() {}
+	virtual ~Entity() override = default;
 
 	void setComponent(const Handle& component) { this->component[component.type] = component; }
 	void setParent(Entity* parent) { this->parent = parent; }

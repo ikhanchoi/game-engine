@@ -1,5 +1,6 @@
 // Modules
-#include "modules/core.h"
+#include "core/context/context.h"
+
 #include "modules/resource.h"
 #include "modules/event.h"
 #include "modules/window.h"
@@ -14,18 +15,18 @@ int main() {
 	auto context = std::make_unique<ikhanchoi::Context>("GLTF Viewer", 1280, 960);
 
 	// Module registration
-	context->registerModuleType<ikhanchoi::ResourceModule>();
+	context->registerManager<ikhanchoi::ResourceManager>();
 	auto* resourceManager = context->getManager<ikhanchoi::ResourceManager>();
-	context->registerModuleType<ikhanchoi::EntityModule>();
+	context->registerManager<ikhanchoi::EntityManager>();
 	auto* entityManager = context->getManager<ikhanchoi::EntityManager>();
-	context->registerModuleType<ikhanchoi::ComponentModule>();
+	context->registerManager<ikhanchoi::ComponentManager>();
 	auto* componentManager = context->getManager<ikhanchoi::ComponentManager>();
-	context->registerModuleType<ikhanchoi::WindowModule>();
+	context->registerManager<ikhanchoi::WindowManager>();
 	auto* windowManager = context->getManager<ikhanchoi::WindowManager>();
 
 	// Object registration
-	resourceManager->registerObjectType<ikhanchoi::ModelResource>();
-	resourceManager->registerObjectType<ikhanchoi::ShaderResource>();
+	resourceManager->registerPool<ikhanchoi::ModelResource>();
+	resourceManager->registerPool<ikhanchoi::ShaderResource>();
 
 
 

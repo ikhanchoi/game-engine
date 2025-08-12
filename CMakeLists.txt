@@ -30,13 +30,14 @@ target_include_directories(tiny_gltf INTERFACE
 
 # modules
 add_library(modules STATIC
+		core/context/context.cpp
+		core/managers/pool_manager_base.cpp
 	modules/resource.cpp
 	modules/component.cpp
 	modules/entity.cpp
 	modules/event.cpp
 	modules/window.cpp
-		modules/core.cpp
-		modules/core.h)
+)
 target_include_directories(modules PUBLIC
 		${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(modules PUBLIC GLEW::GLEW glfw imgui tiny_gltf)

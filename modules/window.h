@@ -1,26 +1,27 @@
 #ifndef GAME_ENGINE_WINDOW_H
 #define GAME_ENGINE_WINDOW_H
 
-#include <utility>
-#include <variant>
+#include "core/objects/object_base.h"
+#include "entity.h"
 
-#include "modules/core.h"
 
 namespace ikhanchoi {
 
-using Content = std::variant<Object*, ManagerBase*>;
 
-class WindowModule : public CRTPModule<WindowModule> {
+class WindowBase {
 public:
-	static std::unique_ptr<ManagerBase> generateManager(Context* context);
+	virtual ~WindowBase() = default;
 };
 
 
-class WindowBase : public Base {
+class MainViewWindow : public WindowBase, public CRTPObject<MainViewWindow> {
 public:
+	explicit MainViewWindow(uint32_t id, const std::string& name)
+		: CRTPObject<MainViewWindow>(id, name) {}
+
+
+	// Additional methods for MainViewWindow can be added here
 };
-
-
 
 
 
@@ -62,12 +63,14 @@ public:
 
 class WindowManager : public ManagerBase {
 private:
+	std::unique_ptr<MainViewWindow> mainViewWindow;
 	std::unique_ptr<AssetWindow> assetWindow;
 	std::unique_ptr<HierarchyWindow> hierarchyWindow;
 	std::unique_ptr<InspectorWindow> inspectorWindow;
 	std::unique_ptr<StatisticsWindow> statisticsWindow;
 	bool demoActive = false;
 	WindowRenderer windowRenderer;
+	bool dockLayoutInitialized = false;
 public:
 	explicit WindowManager(Context* context);
 	~WindowManager() override;

@@ -12,7 +12,10 @@
 
 namespace ikhanchoi {
 
-class Event { public: virtual ~Event() = default; };
+class Event {
+public:
+	virtual ~Event() = default;
+};
 
 
 class UIEvent : public Event {

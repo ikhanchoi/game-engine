@@ -4,19 +4,14 @@
 #include <string>
 #include <typeindex>
 
-#include "modules/core.h"
 #include "modules/resource.h"
 
 namespace ikhanchoi {
 
-class ComponentModule : public CRTPModule<ComponentModule> {
+
+class ComponentBase {
 public:
-	static std::unique_ptr<ManagerBase> generateManager(Context* context);
-};
-
-
-class ComponentBase : public Base {
-
+	virtual ~ComponentBase() = default;
 };
 
 class RenderComponent : public ComponentBase, public CRTPObject<RenderComponent> {
@@ -24,9 +19,9 @@ class RenderComponent : public ComponentBase, public CRTPObject<RenderComponent>
 
 };
 
-class ComponentManager : public ManagerBase {
+class ComponentManager : public PoolManagerBase {
 public:
-	explicit ComponentManager(Context* context) : ManagerBase(context) {}
+	explicit ComponentManager(Context* context) : PoolManagerBase(context) {}
 
 
 };

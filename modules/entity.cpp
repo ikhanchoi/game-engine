@@ -3,11 +3,6 @@
 namespace ikhanchoi {
 
 
-std::unique_ptr<ManagerBase> EntityModule::generateManager(Context* context) {
-	return std::make_unique<EntityManager>(context);
-}
-
-
 Entity* EntityManager::addEntity(const std::string &name, ikhanchoi::Entity *parent) {
 	uint32_t id = globalEntityId++;
 	auto& siblings = parent ? parent->getChildren() : entities;

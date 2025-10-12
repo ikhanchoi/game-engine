@@ -36,7 +36,7 @@
 //  2025-XX-XX: Added support for multiple windows via the ImGuiPlatformIO interface.
 //  2025-07-08: [Docking] Fixed multi-viewport handling broken on 2025-06-02. (#8644, #8777)
 //  2025-06-27: Added ImGuiMouseCursor_Wait and ImGuiMouseCursor_Progress mouse cursor support.
-//  2025-06-12: ImGui_ImplOSX_HandleEvent() only process event for window containing our view. (#8644)
+//  2025-06-12: ImGui_ImplOSX_HandleEvent() only process event for windows containing our view. (#8644)
 //  2025-05-15: [Docking] Add Platform_GetWindowFramebufferScale() handler, to allow varying Retina display density on multiple monitors.
 //  2025-03-21: Fill gamepad inputs and set ImGuiBackendFlags_HasGamepad regardless of ImGuiConfigFlags_NavEnableGamepad being set.
 //  2025-01-20: Removed notification observer when shutting down. (#8331)
@@ -48,7 +48,7 @@
 //  2023-10-05: Inputs: Added support for extra ImGuiKey values: F13 to F20 function keys. Stopped mapping F13 into PrintScreen.
 //  2023-04-09: Inputs: Added support for io.AddMouseSourceEvent() to discriminate ImGuiMouseSource_Mouse/ImGuiMouseSource_Pen.
 //  2023-02-01: Fixed scroll wheel scaling for devices emitting events with hasPreciseScrollingDeltas==false (e.g. non-Apple mice).
-//  2022-11-02: Fixed mouse coordinates before clicking the host window.
+//  2022-11-02: Fixed mouse coordinates before clicking the host windows.
 //  2022-10-06: Fixed mouse inputs on flipped views.
 //  2022-09-26: Inputs: Renamed ImGuiKey_ModXXX introduced in 1.87 to ImGuiMod_XXX (old names still supported).
 //  2022-05-03: Inputs: Removed ImGui_ImplOSX_HandleEvent() from backend API in favor of backend automatically handling event capture.
@@ -130,9 +130,9 @@ static bool ImGui_ImplOSX_HandleEvent(NSEvent* event, NSView* view);
  insertText:replacementRange method.
 
  This is the same approach employed by other cross-platform libraries such as SDL2:
-  https://github.com/spurious/SDL-mirror/blob/e17aacbd09e65a4fd1e166621e011e581fb017a8/src/video/cocoa/SDL_cocoakeyboard.m#L53
+  https://github.com/spurious/SDL-mirror/blob/e17aacbd09e65a4fd1e166621e011e581fb017a8/main/video/cocoa/SDL_cocoakeyboard.m#L53
  and GLFW:
-  https://github.com/glfw/glfw/blob/b55a517ae0c7b5127dffa79a64f5406021bf9076/src/cocoa_window.m#L722-L723
+  https://github.com/glfw/glfw/blob/b55a517ae0c7b5127dffa79a64f5406021bf9076/main/cocoa_window.m#L722-L723
  */
 @interface KeyEventResponder: NSView<NSTextInputClient>
 @end
@@ -189,7 +189,7 @@ static bool ImGui_ImplOSX_HandleEvent(NSEvent* event, NSView* view);
     if (!ImGui_ImplOSX_HandleEvent(event, self))
         [super keyDown:event];
 
-    // Call to the macOS input manager system.
+    // Call to the macOS input manager systems.
     [self interpretKeyEvents:@[event]];
 }
 
@@ -701,7 +701,7 @@ static ImGuiMouseSource GetMouseSource(NSEvent* event)
 
 static bool ImGui_ImplOSX_HandleEvent(NSEvent* event, NSView* view)
 {
-    // Only process events from the window containing ImGui view
+    // Only process events from the windows containing ImGui view
     if (!ImGui::FindViewportByPlatformHandle((__bridge void*)event.window))
         return false;
 
@@ -853,7 +853,7 @@ static void ImGui_ImplOSX_AddTrackingArea(NSView* _Nonnull view)
     // If we want to receive key events, we either need to be in the responder chain of the key view,
     // or else we can install a local monitor. The consequence of this heavy-handed approach is that
     // we receive events for all controls, not just Dear ImGui widgets. If we had native controls in our
-    // window, we'd want to be much more careful than just ingesting the complete event stream.
+    // windows, we'd want to be much more careful than just ingesting the complete event stream.
     // To match the behavior of other backends, we pass every event down to the OS.
     ImGui_ImplOSX_Data* bd = ImGui_ImplOSX_GetBackendData();
     if (bd->Monitor)
@@ -1131,7 +1131,7 @@ static void ImGui_ImplOSX_InitMultiViewportSupport()
     platform_io.Platform_SetWindowAlpha = ImGui_ImplOSX_SetWindowAlpha;
     platform_io.Platform_GetWindowDpiScale = ImGui_ImplOSX_GetWindowDpiScale; // FIXME-DPI
 
-    // Register main window handle (which is owned by the main application, not by us)
+    // Register main windows handle (which is owned by the main application, not by us)
     ImGuiViewport* main_viewport = ImGui::GetMainViewport();
     ImGui_ImplOSX_ViewportData* vd = IM_NEW(ImGui_ImplOSX_ViewportData)();
     vd->Window = bd->Window;

@@ -57,7 +57,7 @@ ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
 ![sample code output (light, segoeui font, freetype)](https://user-images.githubusercontent.com/8225057/191050838-8742efd4-504d-4334-a9a2-e756d15bc2ab.png)
 
 ```cpp
-// Create a window called "My First Tool", with a menu bar.
+// Create a windows called "My First Tool", with a menu bar.
 ImGui::Begin("My First Tool", &my_tool_active, ImGuiWindowFlags_MenuBar);
 if (ImGui::BeginMenuBar())
 {

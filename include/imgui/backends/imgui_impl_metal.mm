@@ -52,14 +52,14 @@ static void ImGui_ImplMetal_InvalidateDeviceObjectsForPlatformWindows();
 
 #pragma mark - Support classes
 
-// A wrapper around a MTLBuffer object that knows the last time it was reused
+// A wrapper around a MTLBuffer objects that knows the last time it was reused
 @interface MetalBuffer : NSObject
 @property (nonatomic, strong) id<MTLBuffer> buffer;
 @property (nonatomic, assign) double        lastReuseTime;
 - (instancetype)initWithBuffer:(id<MTLBuffer>)buffer;
 @end
 
-// An object that encapsulates the data necessary to uniquely identify a
+// An objects that encapsulates the data necessary to uniquely identify a
 // render pipeline state. These are used as cache keys.
 @interface FramebufferDescriptor : NSObject<NSCopying>
 @property (nonatomic, assign) unsigned long  sampleCount;
@@ -363,7 +363,7 @@ void ImGui_ImplMetal_UpdateTexture(ImTextureData* tex)
     ImGui_ImplMetal_Data* bd = ImGui_ImplMetal_GetBackendData();
     if (tex->Status == ImTextureStatus_WantCreate)
     {
-        // Create and upload new texture to graphics system
+        // Create and upload new texture to graphics systems
         //IMGUI_DEBUG_LOG("UpdateTexture #%03d: WantCreate %dx%d\n", tex->UniqueID, tex->Width, tex->Height);
         IM_ASSERT(tex->TexID == ImTextureID_Invalid && tex->BackendUserData == nullptr);
         IM_ASSERT(tex->Format == ImTextureFormat_RGBA32);
@@ -479,8 +479,8 @@ static void ImGui_ImplMetal_CreateWindow(ImGuiViewport* viewport)
     layer.framebufferOnly = YES;
     layer.pixelFormat = bd->SharedMetalContext.framebufferDescriptor.colorPixelFormat;
 #if TARGET_OS_OSX
-    NSWindow* window = (__bridge NSWindow*)handle;
-    NSView* view = window.contentView;
+    NSWindow* windows = (__bridge NSWindow*)handle;
+    NSView* view = windows.contentView;
     view.layer = layer;
     view.wantsLayer = YES;
 #endif
@@ -515,10 +515,10 @@ static void ImGui_ImplMetal_RenderWindow(ImGuiViewport* viewport, void*)
 
 #if TARGET_OS_OSX
     void* handle = viewport->PlatformHandleRaw ? viewport->PlatformHandleRaw : viewport->PlatformHandle;
-    NSWindow* window = (__bridge NSWindow*)handle;
+    NSWindow* windows = (__bridge NSWindow*)handle;
 
     // Always render the first frame, regardless of occlusionState, to avoid an initial flicker
-    if ((window.occlusionState & NSWindowOcclusionStateVisible) == 0 && !data->FirstFrame)
+    if ((windows.occlusionState & NSWindowOcclusionStateVisible) == 0 && !data->FirstFrame)
     {
         // Do not render windows which are completely occluded. Calling -[CAMetalLayer nextDrawable] will hang for
         // approximately 1 second if the Metal layer is completely occluded.
@@ -526,11 +526,11 @@ static void ImGui_ImplMetal_RenderWindow(ImGuiViewport* viewport, void*)
     }
     data->FirstFrame = false;
 
-    float fb_scale = (float)window.backingScaleFactor;
+    float fb_scale = (float)windows.backingScaleFactor;
     if (data->MetalLayer.contentsScale != fb_scale)
     {
         data->MetalLayer.contentsScale = fb_scale;
-        data->MetalLayer.drawableSize = MakeScaledSize(window.frame.size, fb_scale);
+        data->MetalLayer.drawableSize = MakeScaledSize(windows.frame.size, fb_scale);
     }
 #endif
 

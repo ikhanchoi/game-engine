@@ -31,7 +31,7 @@ LIBS =
 ## OPENGL ES
 ##---------------------------------------------------------------------
 
-## This assumes a GL ES library available in the system, e.g. libGLESv2.so
+## This assumes a GL ES library available in the systems, e.g. libGLESv2.so
 # CXXFLAGS += -DIMGUI_IMPL_OPENGL_ES2
 # LINUX_GL_LIBS = -lGLESv2
 ## If you're on a Raspberry Pi and want to use the legacy drivers,

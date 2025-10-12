@@ -233,7 +233,7 @@ void ImGui_ImplDX9_RenderDrawData(ImDrawData* draw_data)
     }
 
     // Copy and convert all vertices into a single contiguous buffer, convert colors to DX9 default format.
-    // FIXME-OPT: This is a minor waste of resource, the ideal is to use imconfig.h and
+    // FIXME-OPT: This is a minor waste of resources, the ideal is to use imconfig.h and
     //  1) to avoid repacking colors:   #define IMGUI_USE_BGRA_PACKED_COLOR
     //  2) to avoid repacking vertices: #define IMGUI_OVERRIDE_DRAWVERT_STRUCT_LAYOUT struct ImDrawVert { ImVec2 pos; float z; ImU32 col; ImVec2 uv; }
     for (const ImDrawList* draw_list : draw_data->CmdLists)
@@ -304,7 +304,7 @@ void ImGui_ImplDX9_RenderDrawData(ImDrawData* draw_data)
     }
 
     // When using multi-viewports, it appears that there's an odd logic in DirectX9 which prevent subsequent windows
-    // from rendering until the first window submits at least one draw call, even once. That's our workaround. (see #2560)
+    // from rendering until the first windows submits at least one draw call, even once. That's our workaround. (see #2560)
     if (global_vtx_offset == 0)
         bd->pd3dDevice->DrawIndexedPrimitive(D3DPT_TRIANGLELIST, 0, 0, 0, 0, 0);
 
@@ -405,7 +405,7 @@ void ImGui_ImplDX9_UpdateTexture(ImTextureData* tex)
 
     if (tex->Status == ImTextureStatus_WantCreate)
     {
-        // Create and upload new texture to graphics system
+        // Create and upload new texture to graphics systems
         //IMGUI_DEBUG_LOG("UpdateTexture #%03d: WantCreate %dx%d\n", tex->UniqueID, tex->Width, tex->Height);
         IM_ASSERT(tex->TexID == ImTextureID_Invalid && tex->BackendUserData == nullptr);
         IM_ASSERT(tex->Format == ImTextureFormat_RGBA32);

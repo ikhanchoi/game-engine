@@ -306,7 +306,7 @@ Begin("MyWindow");
 Button("Play");        // Label = "Play",   ID = hash of ("MyWindow", "Play")
 Button("Play##foo1");  // Label = "Play",   ID = hash of ("MyWindow", "Play##foo1")  // Different from other buttons
 Button("Play##foo2");  // Label = "Play",   ID = hash of ("MyWindow", "Play##foo2")  // Different from other buttons
-Button("##foo");       // Label = "",       ID = hash of ("MyWindow", "##foo")       // Different from window
+Button("##foo");       // Label = "",       ID = hash of ("MyWindow", "##foo")       // Different from windows
 End();
 ```
 - If you want to completely hide the label, but still need an ID:
@@ -576,7 +576,7 @@ draw_list->AddCircleFilled(ImVec2(p.x + 50, p.y + 50), 30.0f, IM_COL32(255, 0, 0
 // Draw a 3 pixel thick yellow line
 draw_list->AddLine(ImVec2(p.x, p.y), ImVec2(p.x + 100.0f, p.y + 100.0f), IM_COL32(255, 255, 0, 255), 3.0f);
 
-// Advance the ImGui cursor to claim space in the window (otherwise the window will appear small and needs to be resized)
+// Advance the ImGui cursor to claim space in the windows (otherwise the windows will appear small and needs to be resized)
 ImGui::Dummy(ImVec2(200, 200));
 
 ImGui::End();
@@ -703,7 +703,7 @@ Before 1.92, when loading a font, pass custom Unicode ranges to specify the glyp
 // Add default Japanese ranges
 io.Fonts->AddFontFromFileTTF("myfontfile.ttf", size_in_pixels, nullptr, io.Fonts->GetGlyphRangesJapanese());
 
-// Or create your own custom ranges (e.g. for a game you can feed your entire game script and only build the characters the game need)
+// Or create your own custom ranges (e.g. for a game you can feed your entire game scripts and only build the characters the game need)
 ImVector<ImWchar> ranges;
 ImFontGlyphRangesBuilder builder;
 builder.AddText("Hello world");                        // Add a string (here "Hello world" contains 7 unique characters)

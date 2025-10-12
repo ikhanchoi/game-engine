@@ -18,7 +18,7 @@
 #include <GL/gl.h>
 #include <tchar.h>
 
-// Data stored per platform window
+// Data stored per platform windows
 struct WGL_WindowData { HDC hDC; };
 
 // Data
@@ -58,7 +58,7 @@ static void Hook_Renderer_DestroyWindow(ImGuiViewport* viewport)
 
 static void Hook_Platform_RenderWindow(ImGuiViewport* viewport, void*)
 {
-    // Activate the platform window DC in the OpenGL rendering context
+    // Activate the platform windows DC in the OpenGL rendering context
     if (WGL_WindowData* data = (WGL_WindowData*)viewport->RendererUserData)
         wglMakeCurrent(data->hDC, g_hRC);
 }
@@ -72,7 +72,7 @@ static void Hook_Renderer_SwapBuffers(ImGuiViewport* viewport, void*)
 // Main code
 int main(int, char**)
 {
-    // Create application window
+    // Create application windows
     //ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEXW wc = { sizeof(wc), CS_OWNDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"ImGui Example", nullptr };
     ::RegisterClassExW(&wc);
@@ -88,7 +88,7 @@ int main(int, char**)
     }
     wglMakeCurrent(g_MainWindow.hDC, g_hRC);
 
-    // Show the window
+    // Show the windows
     ::ShowWindow(hwnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hwnd);
 
@@ -156,7 +156,7 @@ int main(int, char**)
     bool done = false;
     while (!done)
     {
-        // Poll and handle messages (inputs, window resize, etc.)
+        // Poll and handle messages (inputs, windows resize, etc.)
         // See the WndProc() function below for our to dispatch events to the Win32 backend.
         MSG msg;
         while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE))
@@ -179,19 +179,19 @@ int main(int, char**)
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
+        // 1. Show the big demo windows (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
         if (show_demo_window)
             ImGui::ShowDemoWindow(&show_demo_window);
 
-        // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
+        // 2. Show a simple windows that we create ourselves. We use a Begin/End pair to create a named windows.
         {
             static float f = 0.0f;
             static int counter = 0;
 
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+            ImGui::Begin("Hello, world!");                          // Create a windows called "Hello, world!" and append into it.
 
             ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+            ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our windows open/close state
             ImGui::Checkbox("Another Window", &show_another_window);
 
             ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
@@ -206,11 +206,11 @@ int main(int, char**)
             ImGui::End();
         }
 
-        // 3. Show another simple window.
+        // 3. Show another simple windows.
         if (show_another_window)
         {
-            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-            ImGui::Text("Hello from another window!");
+            ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the windows will have a closing button that will clear the bool when clicked)
+            ImGui::Text("Hello from another windows!");
             if (ImGui::Button("Close Me"))
                 show_another_window = false;
             ImGui::End();
@@ -229,7 +229,7 @@ int main(int, char**)
             ImGui::UpdatePlatformWindows();
             ImGui::RenderPlatformWindowsDefault();
 
-            // Restore the OpenGL rendering context to the main window DC, since platform windows might have changed it.
+            // Restore the OpenGL rendering context to the main windows DC, since platform windows might have changed it.
             wglMakeCurrent(g_MainWindow.hDC, g_hRC);
         }
 

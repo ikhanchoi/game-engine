@@ -35,7 +35,7 @@
 //     We provide a '#define IMGUI_IMPL_VULKAN_NO_PROTOTYPES' convenience configuration flag.
 //     In order to make sure this is visible from the imgui_impl_vulkan.cpp compilation unit:
 //     - Add '#define IMGUI_IMPL_VULKAN_NO_PROTOTYPES' in your imconfig.h file
-//     - Or as a compilation flag in your build system
+//     - Or as a compilation flag in your build systems
 //     - Or uncomment here (not recommended because you'd be modifying imgui sources!)
 //     - Do not simply add it in a .cpp file!
 // (2) Call ImGui_ImplVulkan_LoadFunctions() before ImGui_ImplVulkan_Init() with your custom function.
@@ -146,7 +146,7 @@ struct ImGui_ImplVulkan_RenderState
 // You probably do NOT need to use or care about those functions.
 // Those functions only exist because:
 //   1) they facilitate the readability and maintenance of the multiple main.cpp examples files.
-//   2) the multi-viewport / platform window implementation needs them internally.
+//   2) the multi-viewport / platform windows implementation needs them internally.
 // Generally we avoid exposing any kind of superfluous high-level helpers in the backends,
 // but it is too much code to duplicate everywhere so we exceptionally expose them.
 //
@@ -191,7 +191,7 @@ struct ImGui_ImplVulkanH_FrameSemaphores
     VkSemaphore         RenderCompleteSemaphore;
 };
 
-// Helper structure to hold the data needed by one rendering context into one OS window
+// Helper structure to hold the data needed by one rendering context into one OS windows
 // (Used by example's main.cpp. Used by multi-viewport features. Probably NOT used by your own engine/app.)
 struct ImGui_ImplVulkanH_Window
 {

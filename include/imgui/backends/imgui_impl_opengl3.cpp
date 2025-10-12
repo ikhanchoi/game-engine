@@ -137,7 +137,7 @@
 #pragma clang diagnostic ignored "-Wold-style-cast"         // warning: use of old-style cast
 #pragma clang diagnostic ignored "-Wsign-conversion"        // warning: implicit conversion changes signedness
 #pragma clang diagnostic ignored "-Wunused-macros"          // warning: macro is not used
-#pragma clang diagnostic ignored "-Wnonportable-system-include-path"
+#pragma clang diagnostic ignored "-Wnonportable-systems-include-path"
 #pragma clang diagnostic ignored "-Wcast-function-type"     // warning: cast between incompatible function types (for loader)
 #endif
 #if defined(__GNUC__)
@@ -608,7 +608,7 @@ void    ImGui_ImplOpenGL3_RenderDrawData(ImDrawData* draw_data)
         //   of leaks on Intel GPU when using multi-viewports on Windows.
         // - After this we kept hearing of various display corruptions issues. We started disabling on non-Intel GPU, but issues still got reported on Intel.
         // - We are now back to using exclusively glBufferData(). So bd->UseBufferSubData IS ALWAYS FALSE in this code.
-        //   We are keeping the old code path for a while in case people finding new issues may want to test the bd->UseBufferSubData path.
+        //   We are keeping the old code path for a while in case people finding new issues may want to tests the bd->UseBufferSubData path.
         // - See https://github.com/ocornut/imgui/issues/4468 and please report any corruption issues.
         const GLsizeiptr vtx_buffer_size = (GLsizeiptr)draw_list->VtxBuffer.Size * (int)sizeof(ImDrawVert);
         const GLsizeiptr idx_buffer_size = (GLsizeiptr)draw_list->IdxBuffer.Size * (int)sizeof(ImDrawIdx);
@@ -738,14 +738,14 @@ void ImGui_ImplOpenGL3_UpdateTexture(ImTextureData* tex)
 
     if (tex->Status == ImTextureStatus_WantCreate)
     {
-        // Create and upload new texture to graphics system
+        // Create and upload new texture to graphics systems
         //IMGUI_DEBUG_LOG("UpdateTexture #%03d: WantCreate %dx%d\n", tex->UniqueID, tex->Width, tex->Height);
         IM_ASSERT(tex->TexID == 0 && tex->BackendUserData == nullptr);
         IM_ASSERT(tex->Format == ImTextureFormat_RGBA32);
         const void* pixels = tex->GetPixels();
         GLuint gl_texture_id = 0;
 
-        // Upload texture to graphics system
+        // Upload texture to graphics systems
         // (Bilinear sampling is required by default. Set 'io.Fonts->Flags |= ImFontAtlasFlags_NoBakedLines' or 'style.AntiAliasedLinesUseTex = false' to allow point/nearest sampling)
         GLint last_texture;
         GL_CALL(glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture));

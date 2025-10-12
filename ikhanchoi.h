@@ -31,7 +31,7 @@
  *
  *
  * how to update systematically....
- * event system: update or add
+ * event systems: update or add
  *
  *
  */
@@ -96,7 +96,7 @@ private:
 public:
 	explicit ModelResource(const std::string& name, const std::string& extension) : Resource(name, extension) {
 		// load model
-		std::string path = "../assets/models/" + name + "/" + name + "." + extension;
+		std::string path = "../resources/models/" + name + "/" + name + "." + extension;
 		std::string err, warn;
 		bool ret = false;
 		tinygltf::TinyGLTF loader;
@@ -159,7 +159,7 @@ public:
 
 		fs.exceptions(std::ifstream::failbit|std::ifstream::badbit);
 		try {
-			fs.open("../assets/shaders/" + name + "." + extension);
+			fs.open("../resources/shaders/" + name + "." + extension);
 			std::stringstream ss;
 			ss << fs.rdbuf();
 			code = ss.str();
@@ -239,7 +239,7 @@ public:
 					if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
 						std::tuple<std::type_index, std::shared_ptr<Resource>> payload = {type, resource};
 						ImGui::SetDragDropPayload("Resource", &payload, sizeof(payload));
-						ImGui::Text("Put it into render component: %s", label.c_str());
+						ImGui::Text("Put it into render components: %s", label.c_str());
 						ImGui::EndDragDropSource();
 					}
 					ImGui::SameLine();
@@ -429,7 +429,7 @@ public:
 		// update all internals
 	}
 
-	void show() override { // show in entity manager window.
+	void show() override { // show in entity manager windows.
 		ImGui::Checkbox("Active", &active);
 		ImGui::Text("Model: %s", modelResource ? modelResource->getName().c_str() : "None");
 		if (ImGui::BeginDragDropTarget()) {
@@ -468,7 +468,7 @@ public:
 		ImGui::SetNextItemOpen(true, ImGuiCond_Once);
 		if (ImGui::TreeNode("Options")) {
 			ImGui::Checkbox("Alpha blend", &alphaBlend);
-			ImGui::Checkbox("Z test", &zTest);
+			ImGui::Checkbox("Z tests", &zTest);
 			ImGui::TreePop();
 		}
 
@@ -659,7 +659,7 @@ public:
 					std::string label = component->getName();
 					label += " (ID: " + std::to_string(component->getId());
 					if (component->getEntity())
-						label += ", owner ID: "; // std::to_string(component->getEntity()->getId());
+						label += ", owner ID: "; // std::to_string(components->getEntity()->getId());
 					label += ")";
 					bool open = ImGui::CollapsingHeader(label.c_str());
 					if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_None)) {
@@ -1063,7 +1063,7 @@ public:
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	#endif
 		window = glfwCreateWindow(width, height, name.c_str(), NULL, NULL);
-		if (!window) std::cerr << "Error: Failed to create GLFW window" << std::endl;
+		if (!window) std::cerr << "Error: Failed to create GLFW windows" << std::endl;
 		glfwMakeContextCurrent(window);
 
 		glewInit();

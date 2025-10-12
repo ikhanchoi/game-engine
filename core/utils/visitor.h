@@ -1,67 +1,56 @@
 #ifndef GAME_ENGINE_VISITOR_H
 #define GAME_ENGINE_VISITOR_H
 
-namespace ikhanchoi {
 
-class Visitor {
+
+class VisitorBase {
+	class Context* context;
 public:
-	virtual void visit(class MainViewWindow& mainViewWindow) const = 0;
-	virtual void visit(class AssetWindow& assetWindow) const = 0;
-	virtual void visit(class HierarchyWindow& hierarchyWindow) const = 0;
-	virtual void visit(class InspectorWindow& inspectorWindow) const = 0;
-	virtual void visit(class StatisticsWindow& statisticsWindow) const = 0;
+	explicit VisitorBase(class Context* context) : context(context) {}
+	virtual ~VisitorBase() = default;
+	Context* getContext() { return context; }
 
-	virtual void visit(class ModelResource& modelResource) const = 0;
-	virtual void visit(class ShaderResource& shaderResource) const = 0;
+	virtual void visit(class MainViewPanel* mainViewPanel)  = 0;
+	virtual void visit(class AssetPanel* assetPanel)  = 0;
+	virtual void visit(class HierarchyPanel* hierarchyPanel)  = 0;
+	virtual void visit(class InspectorPanel* inspectorPanel)  = 0;
+	virtual void visit(class StatisticsWindow* statisticsWindow)  = 0;
 
-	virtual void visit(class Entity& entity) const = 0;
+	virtual void visit(class ModelResource* modelResource)  = 0;
+	virtual void visit(class ShaderResource* shaderResource)  = 0;
 
-	virtual void visit(class RenderComponent& renderComponent) const = 0;
-	virtual void visit(class TransformComponent& transformComponent) const = 0;
-	virtual void visit(class CameraComponent& cameraComponent) const = 0;
-	virtual void visit(class LightComponent& lightComponent) const = 0;
+	virtual void visit(class Entity* entity)  = 0;
+
+	virtual void visit(class RenderComponent* renderComponent)  = 0;
+	virtual void visit(class TransformComponent* transformComponent) = 0;
+	virtual void visit(class CameraComponent* cameraComponent)  = 0;
+	virtual void visit(class LightComponent* lightComponent)  = 0;
 
 };
 
-class EmptyVisitor : public Visitor {
-	class Context* context = nullptr;
+class AdapterVisitorBase : public VisitorBase {
 public:
-	void setContext(class Context* context) { this->context = context; }
-	Context* getContext() const { return context; }
+	explicit AdapterVisitorBase(class Context* context) : VisitorBase(context) {}
 
-	void visit(MainViewWindow& mainViewWindow) const override {}
-	void visit(AssetWindow& assetWindow) const override {}
-	void visit(HierarchyWindow& hierarchyWindow) const override {}
-	void visit(InspectorWindow& inspectorWindow) const override {}
-	void visit(StatisticsWindow& statisticsWindow) const override {}
+	void visit(MainViewPanel* mainViewWindow) override {}
+	void visit(AssetPanel* assetWindow) override {}
+	void visit(HierarchyPanel* hierarchyWindow) override {}
+	void visit(InspectorPanel* inspectorWindow) override {}
+	void visit(StatisticsWindow* statisticsWindow) override {}
 
-	void visit(ModelResource& modelResource) const override {}
-	void visit(ShaderResource& shaderResource) const override {}
+	void visit(ModelResource* modelResource) override {}
+	void visit(ShaderResource* shaderResource) override {}
 
-	void visit(Entity& entity) const override {}
-
-	void visit(RenderComponent& renderComponent) const override {}
-	void visit(TransformComponent& transformComponent) const override {}
-	void visit(CameraComponent& cameraComponent) const override {}
-	void visit(LightComponent& lightComponent) const override {}
+	void visit(Entity* entity) override {}
+	void visit(RenderComponent* renderComponent) override {}
+	void visit(TransformComponent* transformComponent) override {}
+	void visit(CameraComponent* cameraComponent) override {}
+	void visit(LightComponent* lightComponent) override {}
 };
 
-class WindowRenderer : public EmptyVisitor {
-public:
-	void visit(MainViewWindow& mainViewWindow) const override;
-	void visit(AssetWindow& assetWindow) const override;
-	void visit(HierarchyWindow& hierarchyWindow) const override;
-	void visit(InspectorWindow& inspectorWindow) const override;
-	void visit(StatisticsWindow& statisticsWindow) const override;
 
-	void visit(ModelResource& modelResource) const override;
-	void visit(ShaderResource& shaderResource) const override;
 
-	void visit(Entity& entity) const override;
 
-};
-
-}
 
 
 #endif//GAME_ENGINE_VISITOR_H

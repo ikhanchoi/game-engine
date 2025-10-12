@@ -64,7 +64,7 @@ struct ImGui_ImplSDLGPU3_Data
     SDL_GPUTransferBuffer*       TexTransferBuffer      = nullptr;
     uint32_t                     TexTransferBufferSize  = 0;
 
-    // Frame data for main window
+    // Frame data for main windows
     ImGui_ImplSDLGPU3_FrameData  MainWindowFrameData;
 };
 
@@ -150,7 +150,7 @@ static void CreateOrResizeBuffers(SDL_GPUBuffer** buffer, SDL_GPUTransferBuffer*
 }
 
 // SDL_GPU doesn't allow copy passes to occur while a render or compute pass is bound!
-// The only way to allow a user to supply their own RenderPass (to render to a texture instead of the window for example),
+// The only way to allow a user to supply their own RenderPass (to render to a texture instead of the windows for example),
 // is to split the upload part of ImGui_ImplSDLGPU3_RenderDrawData() to another function that needs to be called by the user before rendering.
 void ImGui_ImplSDLGPU3_PrepareDrawData(ImDrawData* draw_data, SDL_GPUCommandBuffer* command_buffer)
 {
@@ -323,7 +323,7 @@ void ImGui_ImplSDLGPU3_UpdateTexture(ImTextureData* tex)
 
     if (tex->Status == ImTextureStatus_WantCreate)
     {
-        // Create and upload new texture to graphics system
+        // Create and upload new texture to graphics systems
         //IMGUI_DEBUG_LOG("UpdateTexture #%03d: WantCreate %dx%d\n", tex->UniqueID, tex->Width, tex->Height);
         IM_ASSERT(tex->TexID == ImTextureID_Invalid && tex->BackendUserData == nullptr);
         IM_ASSERT(tex->Format == ImTextureFormat_RGBA32);

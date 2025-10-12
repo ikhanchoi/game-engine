@@ -1,7 +1,7 @@
 // dear imgui: Renderer Backend for SDL_Renderer for SDL2
 // (Requires: SDL 2.0.17+)
 
-// Note that SDL_Renderer is an _optional_ component of SDL2, which IMHO is now largely obsolete.
+// Note that SDL_Renderer is an _optional_ components of SDL2, which IMHO is now largely obsolete.
 // For a multi-platform app consider using other technologies:
 // - SDL3+SDL_GPU: SDL_GPU is SDL3 new graphics abstraction API. You will need to update to SDL3.
 // - SDL2+DirectX, SDL2+OpenGL, SDL2+Vulkan: combine SDL with dedicated renderers.

@@ -4,7 +4,7 @@
 
 // Important note to dawn and/or wgpu users: when targeting native platforms (i.e. NOT emscripten),
 // one of IMGUI_IMPL_WEBGPU_BACKEND_DAWN or IMGUI_IMPL_WEBGPU_BACKEND_WGPU must be provided.
-// Add #define to your imconfig.h file, or as a compilation flag in your build system.
+// Add #define to your imconfig.h file, or as a compilation flag in your build systems.
 // This requirement will be removed once WebGPU stabilizes and backends converge on a unified interface.
 //#define IMGUI_IMPL_WEBGPU_BACKEND_DAWN
 //#define IMGUI_IMPL_WEBGPU_BACKEND_WGPU
@@ -13,7 +13,7 @@
 //  [X] Renderer: User texture binding. Use 'WGPUTextureView' as ImTextureID. Read the FAQ about ImTextureID/ImTextureRef!
 //  [X] Renderer: Large meshes support (64k+ vertices) even with 16-bit indices (ImGuiBackendFlags_RendererHasVtxOffset).
 //  [X] Renderer: Expose selected render state for draw callbacks to use. Access in '(ImGui_ImplXXXX_RenderState*)GetPlatformIO().Renderer_RenderState'.
-//  [X] Renderer: Texture updates support for dynamic font system (ImGuiBackendFlags_RendererHasTextures).
+//  [X] Renderer: Texture updates support for dynamic font systems (ImGuiBackendFlags_RendererHasTextures).
 // Missing features or Issues:
 //  [ ] Renderer: Multi-viewport support (multiple windows), useful for desktop.
 

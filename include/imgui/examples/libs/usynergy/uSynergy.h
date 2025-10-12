@@ -387,7 +387,7 @@ operations are blocking and it can suspend the current thread if it needs to wai
 best practice to call uSynergyUpdate from a background thread so it is responsive.
 
 Because uSynergy relies mostly on blocking calls it will mostly stay in thread sleep state
-waiting for system mutexes and won't eat much memory.
+waiting for systems mutexes and won't eat much memory.
 
 uSynergyUpdate doesn't do any memory allocations or have any side effects beyond those of
 the callbacks it calls.

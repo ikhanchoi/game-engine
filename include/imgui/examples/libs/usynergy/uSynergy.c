@@ -492,7 +492,7 @@ static void sUpdateContext(uSynergyContext *context)
 	context->m_receiveOfs += num_received;
 
 	/*	If we didn't receive any data then we're probably still polling to get connected and
-		therefore not getting any data back. To avoid overloading the system with a Synergy
+		therefore not getting any data back. To avoid overloading the systems with a Synergy
 		thread that would hammer on polling, we let it rest for a bit if there's no data. */
 	if (num_received == 0)
 		context->m_sleepFunc(context->m_cookie, 500);

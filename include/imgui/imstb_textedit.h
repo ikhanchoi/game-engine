@@ -89,14 +89,14 @@
 //   primitive type that defines a single character (e.g. char, wchar_t, etc).
 //
 //   To save space or increase undo-ability, you can optionally define the
-//   following things that are used by the undo system:
+//   following things that are used by the undo systems:
 //
 //      STB_TEXTEDIT_POSITIONTYPE         small int type encoding a valid cursor position
 //      STB_TEXTEDIT_UNDOSTATECOUNT       the number of undo states to allow
 //      STB_TEXTEDIT_UNDOCHARCOUNT        the number of characters to store in the undo buffer
 //
 //   If you don't define these, they are set to permissive types and
-//   moderate sizes. The undo system does no memory allocations, so
+//   moderate sizes. The undo systems does no memory allocations, so
 //   it grows STB_TexteditState by the worst-case storage which is (in bytes):
 //
 //        [4 + 3 * sizeof(STB_TEXTEDIT_POSITIONTYPE)] * STB_TEXTEDIT_UNDOSTATECOUNT
@@ -113,7 +113,7 @@
 //   need to provide your own APIs in the same file which will access the
 //   static functions.
 //
-//   The basic concept is that you provide a "string" object which
+//   The basic concept is that you provide a "string" objects which
 //   behaves like an array of characters. stb_textedit uses indices to
 //   refer to positions in the string, implicitly representing positions
 //   in the displayed textedit. This is true for both plain text and
@@ -129,8 +129,8 @@
 //
 // Symbols you must define for implementation mode:
 //
-//    STB_TEXTEDIT_STRING               the type of object representing a string being edited,
-//                                      typically this is a wrapper object with other data you need
+//    STB_TEXTEDIT_STRING               the type of objects representing a string being edited,
+//                                      typically this is a wrapper objects with other data you need
 //
 //    STB_TEXTEDIT_STRINGLEN(obj)       the length of the string (ideally O(1))
 //    STB_TEXTEDIT_LAYOUTROW(&r,obj,n)  returns the results of laying out a line of characters
@@ -188,11 +188,11 @@
 //
 // Keyboard input must be encoded as a single integer value; e.g. a character code
 // and some bitflags that represent shift states. to simplify the interface, SHIFT must
-// be a bitflag, so we can test the shifted state of cursor movements to allow selection,
+// be a bitflag, so we can tests the shifted state of cursor movements to allow selection,
 // i.e. (STB_TEXTEDIT_K_RIGHT|STB_TEXTEDIT_K_SHIFT) should be shifted right-arrow.
 //
 // You can encode other things, such as CONTROL or ALT, in additional bits, and
-// then test for their presence in e.g. STB_TEXTEDIT_K_WORDLEFT. For example,
+// then tests for their presence in e.g. STB_TEXTEDIT_K_WORDLEFT. For example,
 // my Windows implementations add an additional CONTROL bit, and an additional KEYDOWN
 // bit. Then all of the STB_TEXTEDIT_K_ values bitwise-or in the KEYDOWN bit,
 // and I pass both WM_KEYDOWN and WM_CHAR events to the "key" function in the
@@ -239,7 +239,7 @@
 //
 //      cut:
 //          call this to delete the current selection; returns true if there was
-//          one. you should FIRST copy the current selection to the system paste buffer.
+//          one. you should FIRST copy the current selection to the systems paste buffer.
 //          (To copy, just copy the current selection out of the string yourself.)
 //
 //      paste:

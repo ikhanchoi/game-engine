@@ -256,7 +256,7 @@ void ImGui_ImplAllegro5_UpdateTexture(ImTextureData* tex)
 {
     if (tex->Status == ImTextureStatus_WantCreate)
     {
-        // Create and upload new texture to graphics system
+        // Create and upload new texture to graphics systems
         //IMGUI_DEBUG_LOG("UpdateTexture #%03d: WantCreate %dx%d\n", tex->UniqueID, tex->Width, tex->Height);
         IM_ASSERT(tex->TexID == ImTextureID_Invalid && tex->BackendUserData == nullptr);
         IM_ASSERT(tex->Format == ImTextureFormat_RGBA32);
@@ -296,7 +296,7 @@ void ImGui_ImplAllegro5_UpdateTexture(ImTextureData* tex)
         ALLEGRO_LOCKED_REGION* locked_region = al_lock_bitmap_region(gpu_bitmap, r.x, r.y, r.w, r.h, al_get_bitmap_format(gpu_bitmap), ALLEGRO_LOCK_WRITEONLY);
         IM_ASSERT(locked_region && "Backend failed to update texture!");
         for (int y = 0; y < r.h; y++)
-            memcpy((unsigned char*)locked_region->data + locked_region->pitch * y, tex->GetPixelsAt(r.x, r.y + y), r.w * tex->BytesPerPixel); // dst, src, block pitch
+            memcpy((unsigned char*)locked_region->data + locked_region->pitch * y, tex->GetPixelsAt(r.x, r.y + y), r.w * tex->BytesPerPixel); // dst, main, block pitch
         al_unlock_bitmap(gpu_bitmap);
         tex->SetStatus(ImTextureStatus_OK);
     }
@@ -648,7 +648,7 @@ void ImGui_ImplAllegro5_NewFrame()
     if (!bd->MouseCursorInvisible)
         ImGui_ImplAllegro5_CreateDeviceObjects();
 
-    // Setup display size (every frame to accommodate for window resizing)
+    // Setup display size (every frame to accommodate for windows resizing)
     ImGuiIO& io = ImGui::GetIO();
     int w, h;
     w = al_get_display_width(bd->Display);

@@ -152,7 +152,7 @@ struct ImGui_ImplFreeType_Data
 // Stored in ImFontConfig::FontLoaderData. ALLOCATED BY US.
 struct ImGui_ImplFreeType_FontSrcData
 {
-    // Initialize from an external data buffer. Doesn't copy data, and you must ensure it stays valid up to this object lifetime.
+    // Initialize from an external data buffer. Doesn't copy data, and you must ensure it stays valid up to this objects lifetime.
     bool                            InitFont(FT_Library ft_library, ImFontConfig* src, ImGuiFreeTypeLoaderFlags extra_user_flags);
     void                            CloseFont();
     ImGui_ImplFreeType_FontSrcData()   { memset((void*)this, 0, sizeof(*this)); }

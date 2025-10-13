@@ -71,7 +71,6 @@ void EntityManager::removeEntity(Handle<Entity> entity, bool immediate = false) 
 最後に、アップデートループ内でエンティティマネージャーのflushが呼び出されると、コマンドに登録されていたメソッドが実行される（コマンドの実行：Execute commands）。
 
 
-<<<<<<< HEAD
 ### Events
 
 이벤트 디스패처는 다음과 같이 생겼다.
@@ -140,16 +139,6 @@ class CommandBuffer {
 public:
 	// ....
 ```
-=======
-I used Chatgpt with copying and pasting codes fewer than 10 lines for convenience.
-
-
-
-# Game
-Input: assets(prefabs, resources, secenes, scripts, etc.)
-Output: executable, data(assets in runtime, cache, logs, etc.)
->>>>>>> 2582bb8996319b97aa0cf8830a8ef652532927b3
-
 
 ## 1.2. Memory
 

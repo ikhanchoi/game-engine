@@ -1,321 +1,525 @@
 
+I used ChatGPT with copying and pasting code blocks fewer than 10 lines for convenience.
+Japanese translation of this README is also by ChatGPT
 
-# Game
-Input: assets(prefabs, resources, secenes, scripts, etc.)
-Output: executable, data(assets in runtime, cache, logs, etc.)
+# 1. Core
+
+## 1.1. Execution
+
+이 게임엔진에서 여러가지 일을 수행하는 주체는 매니저와 시스템이다.
+각 매니저와 시스템은 하나의 이벤트 디스패처와 하나의 커맨드 버퍼를 가지고 일을 처리하게 할 것이다.
+한 프레임에서 일어나는 대략적인 이벤트 및 커맨드 관련 일들의 플로우는 다음과 같으며, 매니저나 시스템도 다음 네 층위의 메소드들을 갖게 된다.
+
+このゲームエンジンでさまざまな処理を行う主体は、マネージャーとシステムである。
+各マネージャーおよびシステムは、それぞれ1つのイベントディスパッチャーと1つのコマンドバッファを持ち、これらを用いて処理を行う。
+1フレーム内で発生するおおまかなイベントおよびコマンド関連の処理フローは以下の通りであり、マネージャーやシステムも次の4つの階層のメソッドを持つことになる。
+
+1. Detect events
+2. Handle events (by dispatch)
+3. Push commands
+4. Execute commands (by flush)
+
+__예시: 엔티티 생성/삭제__
+__例：エンティティの生成／削除__
+
+에디터의 UI 시스템에서 엔티티 생성/삭제 버튼이 눌린 상황을 가정하자.
+구체적으로는, UI 시스템이 UI 요소들을 순회하며 버튼이 눌렸다는 이벤트를 UI 시스템의 이벤트 디스패처에 모은 것이다(Detect events).
+
+エディターのUIシステムで、エンティティ生成／削除ボタンが押された状況を想定しよう。
+具体的には、UIシステムがUI要素を走査し、ボタンが押されたというイベントをUIシステムのイベントディスパッチャーに集約した状態である（イベント検知：Detect events）。
+
+```c++
+// in UI System
+if (ImGui::Button("Remove Entity")) {
+	publish<onRemoveEntityButtonPressed>(entity);
+}
+```
+
+UI 시스템의 순회 이후 UI 시스템의 `dispatch`가 호출되면 UI 시스템이 모아놓은 이벤트들을 구독하던 이벤트 핸들러들이 호출된다.
+핸들러 메소드의 이름은 주로 전치사 on으로 시작한다.
+여기서 구독되어 있어야 할 이벤트 핸들러는 엔티티 매니저가 갖고 있는 엔티티 생성/삭제 핸들러이다(Handle events).
+
+UIシステムの走査が終わった後、UIシステムのdispatchが呼び出されると、UIシステムが蓄積していたイベントを購読しているイベントハンドラーが呼び出される。
+ハンドラーメソッドの名前は、主に前置詞「on」から始まる。
+ここで購読している必要があるイベントハンドラーは、エンティティマネージャーが保持しているエンティティ生成／削除ハンドラーである（イベント処理：Handle events）。
+
+```c++
+void EntityManager::onRemoveEntityButtonPressed(const removeEntityButtonPressedEvent& event) {
+	removeEntity(event.entity);
+}
+```
+
+엔티티 생성의 경우 즉시 일을 수행할 수도 있지만, 엔티티 삭제의 경우 핸들러가 즉시 삭제를 실행하는 메소드를 호출해버리면 같은 프레임의 다른 곳에서 삭제된 엔티티를 참조할 때 큰일이 나므로, 커맨드를 통해 업데이트 루프의 마지막 스테이지에서 실제 삭제가 이루어져야 한다.
+따라서 엔티티 삭제 핸들러는 다음과 같이 커맨드를 만들어 엔티티 매니저 자신의 커맨드 버퍼에 커맨드를 푸시한다(Push commands).
+
+エンティティ生成の場合は即座に処理を行っても問題ないが、エンティティ削除の場合、ハンドラーがその場で削除処理を実行してしまうと、同じフレーム内の他の箇所で削除済みのエンティティを参照してしまう危険がある。
+そのため、実際の削除はコマンドを介して、アップデートループの最後のステージで行われなければならない。
+したがって、エンティティ削除ハンドラーは次のようにコマンドを生成し、エンティティマネージャー自身のコマンドバッファにそのコマンドをプッシュする（コマンドのプッシュ：Push commands）。
+
+```c++
+void EntityManager::removeEntity(Handle<Entity> entity, bool immediate = false) {
+	if (immediate)
+		// remove entity from scene graph and destroy entity in memory
+	else
+		push<Command>(
+			[this, entity] { removeEntity(entity, true); }
+		);
+}
+```
+마지막으로 업데이트 루프에서 엔티티 매니저의 `flush`가 호출되면 커맨드에 등록되었던 메소드가 실행된다(Execute commands).
+
+最後に、アップデートループ内でエンティティマネージャーのflushが呼び出されると、コマンドに登録されていたメソッドが実行される（コマンドの実行：Execute commands）。
 
 
-# Objects
+### Events
 
-Something that reference relations and lifecycle management should be clear.
+이벤트 디스패처는 다음과 같이 생겼다.
 
-Basically ownership is not used, but reference relation is used to manage all lifecycles.
+イベントディスパッチャーは次のような構造をしている。
 
-World -> Scene/Persistent -> Prefab/Entity -> Script/Component(Parameter) -> Resource/Primitive(Data)
+```c++
+class EventDispatcher {
+	std::vector<std::unique_ptr<EventBase>> events;
+	std::unordered_map<std::type_index, std::vector<std::function<void(const EventBase&)>>> listeners;
+public:
+	template <typename EventType>
+	void subscribe(const std::function<void(const EventType&)>& handler);
+	template <typename EventType, typename... Args>
+	void publish(Args&&... args);
+	void dispatch();
+}
+```
+
+### Commands
+
+Undo-redo 시스템에 관한 건 본래 에디터의 구체적인 구현 부분에 들어가야 해서 코어에 들어가면 안되지만, `UndoableCommand`만은 예외이다.
+온갖 매니저와 시스템에서 Redo 함수를 등록할 수 있어야 하기 때문이다.
+이 클래스는 당연하지만 Undo-redo 시스템을 참조하지 않게 해서 코어가 에디터에 의존하지 않게 해야 한다.
+
+Undo-redoシステムに関する処理は本来、エディターの具体的な実装部分に含まれるべきものであり、コアには含めてはならない。
+しかし、UndoableCommandだけは例外である。
+なぜなら、あらゆるマネージャーやシステムからRedo関数を登録できるようにする必要があるためだ。
+当然ながら、このクラス自体はUndo-redoシステムを参照してはならず、コアがエディターに依存しないように設計しなければならない。
+
+```c++
+class CommandBase {
+protected:
+	std::function<void()> perform;
+	explicit CommandBase(std::function<void()> function) : perform(std::move(function)) {}
+public:
+	void execute() const { perform(); }
+	virtual ~CommandBase() = 0;
+};
+
+class Command final : public CommandBase {
+public:
+	explicit Command(std::function<void()> function) : CommandBase(std::move(function)) {}
+};
+
+class UndoableCommand final : public CommandBase {
+	std::function<void()> revert;
+public:
+	explicit UndoableCommand(std::function<void()> perform, std::function<void()> revert)
+		: CommandBase(std::move(perform)), revert(std::move(revert)) {}
+	void undo() const { revert(); }
+	std::unique_ptr<UndoableCommand> clone() const {
+		return std::make_unique<UndoableCommand>(perform, revert);
+	}
+};
+```
+
+커맨드버퍼는 `executing`을 넣어 놓아 커맨드의 내용물에서 새로운 커맨드가 만들어지는 꼬리물기나 다음 프레임으로 넘어가는 불상사를 막는다.
+
+コマンドバッファにはexecutingというフラグを設けておき、コマンドの実行中にその内容から新たなコマンドが生成されてしまう連鎖的な処理や、次のフレームに処理が持ち越されるような不具合を防止する。
+
+```c++
+class CommandBuffer {
+	std::vector<std::unique_ptr<CommandBase>> commands; // this may be gonna be a typed map like event dispatcher.
+	bool executing = false;
+public:
+	// ....
+```
 
 
+## 1.2. Memory
 
-파라미터란 컴포넌트가 가지는 변수값과 리소스의 경로를 말한다.
-데이터란 리소스파일 내부의 값을 말한다.
-파라미터와 데이터 모두 메모리에 올라온 상황에서는 매우 빠른 속도로 변경될 수 있다.
-따라서 캐시친화적 최적화 대상이다.
+### Handles
 
+포인터의 역할을 대신하는 템플릿 기반 핸들.
+핸들에 의해 가리켜지며 스토리지에 저장될 수 있는 객체를 이 엔진에서는 오브젝트라고 부르고 `Object`라는 추상클래스를 상속하는 것으로 결정할 것이다.
+스토리지에 접근하거나 시스템 및 매니저가 정보를 주고받을 때 항상 사용될 것이다.
+invalid 핸들은 지원하지 않게 하였다.
+`uint32_t` 두 개로 정확히 8바이트라 메모리적으로도 매우 좋다.
 
+ポインタの役割を代替するテンプレートベースのハンドル。
+このエンジンでは、ハンドルによって参照され、ストレージに格納されることができるオブジェクトを「オブジェクト（Object）」と呼び、Objectという抽象クラスを継承する形で定義する。
+ストレージへのアクセスや、システムおよびマネージャー間で情報をやり取りする際に常に使用される。
+無効（invalid）ハンドルはサポートしない仕様とした。
+uint32_tを2つ使用するため、ちょうど8バイトとなり、メモリ効率も非常に良い。
 
-### Managers
-객체들을 관리하는 신의 사자와 같은 존재들이며, 월드가 소유한다.
-구체적으로, 관리자는 임포터와 할당자, 참조카운터 유틸을 이용함으로써 메모리 위 객체의 생성과 소멸을 담당한다.
-씬이 전환되는 상황에서는 생성과 소멸이라기보다는 객체의 활성화 및 비활성화가 이미지적으로는 더 알맞을 것이다.
-물론 이 객체의 활성화는 메모리에서의 생성 직후 초기화작업이 붙은 경우를 의미한다.
-관리자는 관리자가 살아 있는 동안 씬이 전환됨으로써 객체들이 얼마든 새로 활성화되거나 비활성화될 수 있다는 뜻에서 객체지향적인 의미로 담당하는 객체들의 수명(분량)을 책임지지 않는다.
-객체가 메모리에 올라와 있지 않아도 우리는 그 객체가 비활성화된 채 존재한다고 인식할 수 있으며, 관리자가 그 객체를 메모리(무대, 월드)에 올리고 내리는 역할만 할 뿐이다.
-이런 의미에서 객체들은 기본적으로 어딘가에 소유되지 않는다.
+```c++
+template <typename ObjectType>
+struct Handle {
+    uint32_t id;
+    uint32_t generation;
+	explicit Handle(uint32_t id, uint32_t generation) : id(id), generation(generation) {}
+	bool operator == (const Handle& other) const { return id == other.id && generation == other.generation; }
+	bool operator != (const Handle& other) const { return !(*this == other); }
+};
+```
 
-관리자들끼리 서로 참조를 할 수 있다.
-씬 관리자가 씬을 전환하면 다른 하부 관리자들은 씬에 적힌 대로 객체들을 올리거나 내린다.
-시스템은 관리자에 의해 활성화된 객체들에만 접근하여 값을 갱신하거나 참조하거나 반환할 수 있다. 
-각 매니저들은 자신들이 속한 월드를 거쳐 현재 활성화된 씬들을 알 수 있으며, 객체가 올라가거나 내려감으로써 참조관계가 갱신되는 것을 씬에 실시간으로 반영한다.
+핸들을 `std::unordered_map`의 키로 쓰려면 해시가 있어야 해서 해시함수의 구현도 있다.
 
+ハンドルをstd::unordered_mapのキーとして使用するにはハッシュが必要なため、ハッシュ関数の実装も用意されている。
 
-무대 밖에 존재하던 배우가 무대 위로 올라오거나 내려가는 것 말고도, 정말로 무대 위에서 배우가 태어나고 죽어서 존재 자체가 사라질 수 있다.
-씬이 끝나면 모든 것이 초기화되어 태어났던 배우는 없어지고 죽었던 배우는 살아난다.
+```c++
+namespace std {
+	template <typename ObjectType>
+	struct hash<Handle<ObjectType>> { // ...
+```
 
+### Storages
 
+스토리지는 직관적으로 메모리다.
+스토리지에서 핸들로 관리될 수 있다는 것은 곧 현재 메모리에 올라온 오브젝트라는 뜻이다.
+스토리지는 할당자의 타입이 실제로 무엇인지, 즉 어떤 할당 알고리즘을 사용하는지 시스템과 매니저가 몰라도 되도록 할당자를 감싸는 역할을 한다.
+할당자의 타입은 스토리지를 생성할 때만 알면 된다.
 
+ストレージは直感的にはメモリである。
+ストレージでハンドルによって管理されるということは、すなわち現在メモリ上に存在するオブジェクトであることを意味する。
+ストレージは、アロケーターの型、すなわちどのような割り当てアルゴリズムを使用しているかを、システムやマネージャーが知らなくてもよいように、アロケーターをラップする役割を果たす。
+アロケーターの型は、ストレージを生成する際にのみ知っていれば十分である。
 
-관리자는 SoA로 데이터를 할당해 컴포넌트간 상호참조 시에 캐시친화적 최적화를 도모한다.
-
-
-
-
-### Importers
-- 리소스: 모델 임포터, 셰이더 컴파일러
-- 스크립트: 스크립트 컴파일러, 멤버변수 정보 불러온다든가
-- 프리팹 임포터
-- 씬 로더
-
-
-매니저에 의해 객체를 생성할 때 호출된다.
+```c++
+template <typename ObjectType>
+class Storage {
+	std::unique_ptr<Allocator<ObjectType>> allocator;
+	explicit Storage(std::unique_ptr<Allocator<ObjectType>> allocator) : allocator(std::move(allocator)) {}
+public:
+	template <template <typename> class AllocatorType>
+	static Storage make(size_t initialCapacity = 64) {
+		return Storage(std::make_unique<AllocatorType<ObjectType>>(initialCapacity));
+	}
+	// ...
+```
 
 
 ### Allocators
 
 
-관리자는 각 활성화된 객체타입이 정확히 어떤 할당자에 의해 할당됐는지 몰라도 좋다.
-시스템이 활성화된 객체를 순회할 때, 해당 타입이 정확히 어떤 할당자에 의해 할당됐는지 알아야 한다. 왜냐 하면 타입을 모르는 함수객체를 forEach에 넘겨줄 수 없기 때문이다.
+할당자의 추상클래스가 제공하는 기능들은 다음과 같다.
+
+アロケーターの抽象クラスが提供する機能は次の通りである。
+
+```c++
+template <typename ObjectType>
+class Allocator {
+	friend class Storage<ObjectType>;
+
+protected:
+	virtual Handle<ObjectType> create() = 0;
+	virtual std::unique_ptr<Allocator> clone() = 0;
+	virtual void destroy(Handle<ObjectType>) = 0;
+	virtual void clear() = 0;
+
+	virtual bool valid(Handle<ObjectType>) = 0;
+	virtual ObjectType* resolve(Handle<ObjectType>) = 0;
+	virtual std::vector<Handle<ObjectType>> view() = 0;
+	virtual void each(std::function<void(ObjectType*)>) = 0;
+
+public:
+	virtual ~Allocator() = 0;
+};
+
+template <typename ObjectType, template <typename> class AllocatorType>
+class AllocatorCRTP : public Allocator<ObjectType> {
+protected:
+	void each(std::function<void(ObjectType*)> function) override {
+		static_cast<AllocatorType<ObjectType>*>(this)->_each(function);
+	}
+};
+```
+
+여기서 CRTP를 사용한 이유는 다음과 같이 `std::function<void(ObjectType*)>`가 아니라 함수의 템플릿 전달참조로 순회하는 `each`를 구현할 때, 이를 할당자의 타입을 모르는 상황에서 다형적으로 호출할 수 있게 하기 위함이다.
+시스템이나 매니저가 `each`를 한 번 호출하면 가상호출이 한 번 일어나게 되는 걸 감수하고 순회 비용을 템플릿으로 최적화하고자 하였다.
+
+ここでCRTPを使用した理由は、`std::function<void(ObjectType*)>`ではなく、関数のテンプレート参照を用いて走査するeachを実装する際に、アロケーターの型を知らない状況でも多態的に呼び出せるようにするためである。
+システムやマネージャーがeachを1回呼び出すと仮想呼び出しが1回発生することを許容し、その上で走査コストをテンプレートによって最適化することを目指した。
+
+```c++
+
+template <typename ObjectType>
+class PoolAllocator final : public AllocatorCRTP<ObjectType, PoolAllocator> {
+	friend class AllocatorCRTP<ObjectType, PoolAllocator>;
+
+	// ...
+	
+	template <typename Function>
+		void _each(Function&& function);
+	
+	// ...
+```
+
+아직 참조 카운트는 구현하지 않았다.
+
+参照カウントはまだ実装していない。
 
 
 
 
-## Worlds
 
-메모리에 올라온 패러미터 및 데이터와 시스템 사이의 상호작용가능한 것들을 활성화시킨다.
-구체적으로, 객체들을 활성화하고 시스템을 업데이트시킨다.
+# 2. Game
+
+실제 런타임에 돌아가는 ECS의 기본요소들과 렌더링, 물리, 애니메이션, 오디오, 인풋 등 게임의 기초적인 시스템들이 들어가 있는 곳이다.
+
+実際のランタイムで動作するECSの基本要素や、レンダリング、物理、アニメーション、オーディオ、入力など、ゲームの基礎的なシステムが含まれる場所である。
+
+
+## 2.1. Worlds
+
+월드는 기본적으로 모든 스토리지를 소유하고, 매니저와 시스템들이 스토리지에 간섭할 수 있게 하는 장소로 정의하였다.
+스토리지를 매니저가 소유하지 않게 설계하였다.
 극장(Editor/Player)에 의해 소유되어, 활성화된 장면(Scene)에 지시된 대로 배우(Entity)들이 등장해 규칙에 맞추어 움직이는 무대.
-객체(할당자에 의해 할당되는 대상)가 아닌 것으로 이해하자.
 
-에디터는 에디트월드와 플레이월드, 기본적으로 총 두 개의 월드를 소유할 수 있다.
+ワールドは基本的にすべてのストレージを所有し、マネージャーやシステムがストレージに干渉できる場所として定義されている。
+ストレージはマネージャーが所有しないように設計されている。
+ワールドは劇場（Editor/Player）によって所有され、アクティブなシーン(Scene)の指示に従って俳優（Entity）が登場し、ルールに沿って動く舞台である。
+
+```c++
+class World {
+	std::unordered_map<std::type_index, std::any> storage;
+	std::unordered_map<std::type_index, std::unique_ptr<ManagerBase>> manager;
+	std::unordered_map<std::type_index, std::unique_ptr<SystemBase>> system;
+public:
+	void update();
+	// ...
+```
+이 코드의 `std::any`는 항상 `std::shared_ptr<Handle<...>>`이다.
+얕은 복제를 염두에 두고 있기 때문에 공유 포인터를 사용한다.
+
+추후 설명하겠지만 에디터는 에디트월드와 플레이월드, 기본적으로 총 두 개의 월드를 소유할 수 있다.
 에디트월드는 에디터의 생성자와 소멸자에서 생성되고 소멸된다.
 플레이월드는 플레이모드에 진입하고 퇴장했을 때 생성되고 소멸된다.
-플레이어는 플레이월드 하나만을 소유한다.
-나중에 멀티플레이게임을 구현하게 되면 월드가 훨씬 많아질 수 있다.
+플레이모드로 진입하는 버튼이 에디트월드에서 눌리면, 플레이월드가 생성된 후 깊고 얕은 복사로 스토리지가 복제되고, 에디터에 필요 없고 런타임 게임에 필요한 시스템들과 매니저들(물리 등)만 초기화된다.
+
+반면 아직 구현하지 않은 플레이어는 플레이월드 하나만을 소유하고, 나중에 멀티플레이게임을 구현하게 되면 월드가 훨씬 많아질 수 있다.
+
+매니저와 시스템들끼리 서로 참조는 할 수 있는 상태로 코드를 짰지만, 가능하면 이벤트로만 소통하게끔 하자.
+
+このコードでの`std::any`は常に`std::shared_ptr<Handle<...>>`である。
+浅いコピーを考慮しているため、共有ポインタを使用している。
+
+後ほど詳しく説明するが、エディターは基本的にエディットワールドとプレイワールド、合計2つのワールドを所有できる。
+エディットワールドはエディターのコンストラクタとデストラクタで生成および破棄される。
+プレイワールドはプレイモードに入退する際に生成および破棄される。
+エディットワールドでプレイモードに入るボタンが押されると、プレイワールドが生成され、ストレージが深いコピーと浅いコピーで複製される。そして、エディターには不要で、ランタイムゲームに必要なシステムやマネージャー（物理など）だけが初期化される。
+
+一方、まだ実装していないプレイヤーはプレイワールドのみを所有し、将来的にマルチプレイヤーゲームを実装するとワールドはさらに多くなる可能性がある。
+
+マネージャーやシステム同士が互いに参照できる状態でコードは書かれているが、可能な限りイベントによってのみ通信するようにしよう。
+
+### Managers
+
+객체들을 관리하는 신의 사자와 같은 존재들.
+구체적으로, 매니저는 임포터와 할당자, 참조카운터 유틸을 이용함으로써 메모리 위 오브젝트의 생성/소멸 및 활성화/비활성화, 그리고 오브젝트들 간의 참조 및 소유관계 변경을 담당한다.
+메모리적인 측면의 생성/소멸과 직관적 측면의 오브젝트의 활성화/비활성화를 구분하면 좋다.
+플레이어가 다른 씬으로 이동해서 메모리에서 내려간 엔티티와 게임 로직에 의해 파괴되어 메모리에서 내려간 엔티티는 느낌이 다르다.
+단순히 씬 전환으로 메모리에서 내려갔더라도 변경상태가 디스크에 박제된 몬스터가 있다면, 이를 비활성화라고 부를 수는 있어도 소멸로 부르면 슬프기 때문이다.
+따라서 매니저가 메모리에서의 오브젝트 생성/소멸 메소드를 갖지만, 오브젝트가 메모리에 올라와 있을지 말지를 결정하는 것은 씬이므로, 객체지향적인 의미에서 오브젝트들의 수명(=출연 분량)을 책임지지는 않는다고 보았다.
+오브젝트가 메모리에 올라와 있지 않아도 우리는 그 객체가 비활성화된 채 존재한다고 인식할 수 있으며, 관리자가 그 객체를 메모리(무대, 월드)에 올리고 내리는 역할만 할 뿐이다.
+이런 의미에서 객체들은 기본적으로 어딘가에 소유되지 않는다.
+이것이 스토리지를 매니저 밖에 존재시킨 이유.
+
+オブジェクトを管理する“神の使者”のような存在。
+具体的には、マネージャーはインポーターやアロケーター、参照カウンターユーティリティを利用して、メモリ上のオブジェクトの生成／破棄および有効化／無効化、さらにオブジェクト間の参照や所有関係の変更を担当する。
+
+メモリの観点での生成／破棄と、直感的な観点でのオブジェクトの有効化／無効化を区別すると理解しやすい。
+たとえば、プレイヤーが別のシーンに移動してメモリから下りたエンティティと、ゲームロジックによって破壊されメモリから下りたエンティティでは感覚が異なる。
+単にシーン切り替えでメモリから下りたとしても、変更状態がディスクに保存されているモンスターであれば、それは無効化とは呼べても、破棄と呼ぶのは悲しいことである。
+
+したがって、マネージャーはメモリ上のオブジェクト生成／破棄のメソッドを持つが、オブジェクトがメモリ上に存在するかどうかを決定するのはシーンであり、オブジェクト指向的な意味でオブジェクトの寿命（＝出演分量）を責任を持つわけではないと考える。
+オブジェクトがメモリ上に存在していなくても、私たちはそのオブジェクトが無効化された状態で存在すると認識でき、管理者はそのオブジェクトをメモリ（舞台、ワールド）に上げ下げする役割を果たすに過ぎない。
+
+この意味で、オブジェクトは基本的にどこにも所有されない。
+これがストレージをマネージャーの外に存在させた理由である。
+
+```c++
+class ManagerBase {
+	World& world;
+	std::unique_ptr<EventDispatcher> eventDispatcher;
+	std::unique_ptr<CommandBuffer> commandBuffer;
+	std::unordered_map<std::type_index, std::any> storage; // storage pointers that can be accessed by this manager instance.
+	// ...
+```
+이 코드의 `std::any`는 항상 `std::weak_ptr<Handle<...>>`이다.
+매니저가 변경가능한 권한을 가진 스토리지만을 캐시해왔다는 이미지.
+씬 매니저는 추상클래스 `SceneBase`를 상속한 오브젝트들을, 컴포넌트 매니저는 추상클래스 `ComponentBase`를 상속한 오브젝트들을 관리하게끔 하였다.
 
 
-
-월드는 기본적으로 전역적으로 정의할 만한 것들을 유니크포인터로 소유한다고 생각하자.
-관리자들과 시스템들, 그리고 코어의 임포터들과 할당자들의 인스턴스들을 소유한다.
-한 월드에서는 퍼시스턴트 하나, 그리고 프로젝트가 가진 여러 씬들 중 하나, 이렇게 두 개가 항상 활성화되어 있다.
-활성화된 씬도 게임 시작 씬으로서 초기화가 되어 있어야 한다.
-월드의 책임은 프레임마다 시스템을 호출하는 것과 필요 시 스택할당자로 씬의 활성상태를 전환하는 것이다.
-
-관리자는 할당자와 참조카운터 유틸을 가지고 객체의 (메모리에서의) 생성과 소멸을 담당한다.
-시스템은 할당된 패러미터와 데이터의 값을 참조하거나 갱신한다.
+このコードでの`std::any`は常に`std::weak_ptr<Handle<...>>`である。
+マネージャーは変更可能な権限を持つストレージだけをキャッシュしているイメージである。
+シーンマネージャーは抽象クラスSceneBaseを継承したオブジェクトを、コンポーネントマネージャーは抽象クラスComponentBaseを継承したオブジェクトを管理するようにしている。
 
 
-## Persistents
+### Systems
 
-퍼시스턴트는 항상 활성화되어 플레이 중 계속 메모리에 상주하는 데이터들을 결정한다.
-퍼시스턴트 역시 엔티티, 컴포넌트, 리소스의 참조정보 및 컴포넌트와 리소스의 데이터 초깃값를 갖는다.
+시스템은 매니저에 의해 활성화된 객체들에 접근하여 값을 갱신하거나 참조하거나 반환할 수 있다.
 
-게임 전체에 존재하는 보편적인 씬이라 생각하면 된다.
-
+システムはマネージャーによって有効化されたオブジェクトにアクセスし、値を更新したり参照したり返したりすることができる。
 
 
-## Scenes
+## 2.2. Objects
 
+스토리지에 저장될 수 있는 모든 것.
+크게 네 종류로 분류된다.
+씬이 엔티티를 갖고, 엔티티가 컴포넌트를 갖고, 컴포넌트가 리소스를 갖는 느낌으로, 상속관계는 예를 들어 다음과 같은 느낌이다.
 
-씬은 활성화됨으로써 메모리에 올라와 상호작용이 가능해지는 데이터들을 결정한다.
-씬의 소유권은 프로젝트가 갖고 있으며, 활성화와 비활성화만 월드가 책임진다.
-에디트월드에서는 씬의 활성화여부가 씬의 내용 변경가능 여부 또한 의미한다.
+ストレージに格納され得るすべてのもの。
+大きく4種類に分類される。
+シーンがエンティティを持ち、エンティティがコンポーネントを持ち、コンポーネントがリソースを持つという感覚で、継承関係は例えば次のようなイメージである。
 
-씬은 엔티티 및 프리팹의 씬그래프, 엔티티(프리팹)-컴포넌트(스크립트) 참조 테이블을 인스턴스로서 갖는다. 
+```c++
+class Scene final : public SceneBase;
+class PersistentScene final : public SceneBase;
 
-씬은 자신이 소유한 엔티티 그래프 정보와 엔티티 및 컴포넌트 사이의 소유관계들을 책임지지만, 컴포넌트가 리소스를 참조하는 것은 컴포넌트의 패러미터로서 이해된다는 것을 기억하자.
-따라서 리소스가 컴포넌트에 부착되거나 변경되는 것은 해당 컴포넌트의 타입을 책임지는 시스템이나 매니저에 의해 이루어진다.
-활성화된 씬은 엔티티 트리를 비롯해 관리자에게 보고받은 모든 참조관계의 정보를 항상 최신으로 유지하고 있어야 하며, 파일로서 씬이 저장될 때만 컴포넌트 패러미터 초깃값을 싹 조사하여 씬에 구워진다.
+class Entity final : public EntityBase;
+class PrefabEntity final : public EntityBase;
 
-메모리에 올라와 있는 기간이 길다.
-따라서 씬의 용량은 매우 작고 스택기반으로 할당되며 캐시 최적화 가능성도 낮다.
+class ScriptComponent final : public ComponentBase;
+class RenderComponent final : public ComponentBase;
+class CameraComponent final : public ComponentBase;
+class ColliderComponent final : public ComponentBase;
+// ...
 
-하나의 월드에는 플레이 중 기본적으로 퍼시스턴트를 제외한 최대 하나의 씬만이 활성화될 수 있다고 생각하면 좋지만, 여러 씬이 활성화되는 것도 불가능한 것은 아니다.
-씬이 활성화된다는 것은 그 씬이 참조하는 파라미터와 데이터가 메모리, 즉 스토리지에 올라온다는 뜻이다.
-반대로 어떤 데이터가 메모리에 올라오려면 그 데이터를 참조하는 씬이 활성화되어야 한다.
-씬이 활성화되어 메모리에 올라온 파라미터와 데이터는 상호작용으로 값이 변경될 수 있다.
+class PrimitiveResource final : public ResourceBase;
+class ModelResource final : public ResourceBase;
+class ShaderResource final : public ResourceBase;
+// ...
+```
+
+### Scenes
+
+현재 메모리에 올라와 있는, 그리고 올라와 있어야 하는 엔티티와 컴포넌트 간 소유 및 참조관계를 멤버 변수로 갖는 오브젝트.
+씬이 활성화되어 메모리에 올라온 파라미터와 데이터는 시스템과의 상호작용으로 값이 변경될 수 있다.
 씬이 비활성화되면 파라미터와 데이터는 메모리에서 해제되고 플레이 중 변경된 값은 잊힌다.
 씬이 다시 활성화되면 컴포넌트와 리소스는 초깃값을 가지고 다시 메모리에 올라온다.
 만약 파라미터나 데이터가 지속되길 원한다면 해당 컴포넌트나 리소스는 퍼시스턴트가 참조해야 한다.
 
+씬이 소유하는 엔티티들 간의 계층관계를 가진 씬 그래프, 엔티티와 컴포넌트의 참조관계를 표현하는 마스크와 맵이 주요 멤버변수이다.
+컴포넌트와 리소스 간 참조관계는 씬의 멤버가 아니라 컴포넌트의 멤버로서 관리된다.
 
-플레이월드에서 씬은 변경될 수 없지만 에디트월드에서는 씬의 내용을 변경할 수 있는 시스템들이 다수 존재한다.
-씬은 매니저에 의해 관리되지 않지만 에디트월드에서 
+現在メモリ上に存在し、かつ存在しているべきエンティティとコンポーネント間の所有および参照関係をメンバ変数として持つオブジェクト。
+シーンがアクティブになってメモリ上にロードされたパラメータやデータは、システムとの相互作用によって値が変更される可能性がある。
+シーンが非アクティブになると、パラメータやデータはメモリから解放され、プレイ中に変更された値は失われる。
+シーンが再びアクティブになると、コンポーネントやリソースは初期値を持った状態で再びメモリにロードされる。
+もしパラメータやデータを持続させたい場合、そのコンポーネントやリソースはパーシステントが参照する必要がある。
 
+シーンが所有するエンティティ間の階層関係を表すシーングラフ、エンティティとコンポーネントの参照関係を表すマスクおよびマップが主要なメンバ変数である。
+コンポーネントとリソース間の参照関係は、シーンのメンバではなく、コンポーネント自身のメンバとして管理される。
 
+```c++
+class SceneBase {
+	friend class EntityManager;
+	friend class ComponentManager;
 
+protected:
+	Forest<Handle<Entity>> sceneGraph;
+	std::unordered_map<Handle<Entity>, std::bitset<64>> componentMask; // dense
+	std::unordered_map<Handle<Entity>, std::unordered_map<std::type_index, Handle<Component>>> componentMap; // sparse, TODO: type-erased handle?
 
-## Components
+	std::unordered_map<Handle<Entity>, std::string> entityName; // for editor
+	//std::unordered_map<Handle<Entity>, enum Icon(?)> entityIcon; // for editor
 
+public:
+	virtual ~SceneBase() = 0;
+};
+```
 
+씬은 기본적으로 하나만 메모리에 올라온 상태를 가정하지만, 오픈월드 같이 씬 스트리밍 기법을 활용해야 할 경우 복수의 씬이 메모리에 올라와 있을 수도 있다.
+씬 매니저가 씬을 전환하면 다른 하부 관리자들은 씬에 적힌 대로 오브젝트들을 메모리에 올리거나 내린다.
+각 매니저들은 자신들이 속한 월드(이벤트 시스템)를 거쳐 현재 활성화된 씬들을 알 수 있으며, 객체가 올라가거나 내려감으로써 참조관계가 갱신되는 것을 씬에 실시간으로 반영한다.
+활성화된 씬은 씬 그래프를 비롯해 여러 매니저에게 보고받은 모든 참조관계의 정보를 항상 최신으로 유지하고 있어야 하며, 파일로서 씬이 저장될 때 컴포넌트 패러미터 초깃값을 싹 조사하여 씬에 굽는다.
 
-## Scripts
+퍼시스턴트 씬은 항상 활성화되어 플레이 중 계속 메모리에 상주하는 데이터들을 결정한다.
+한 월드에는 퍼시스턴트 씬이 딱 하나 반드시 존재하며, 씬 매니저의 생성자에서 만들어진다.
+퍼시스턴트 역시 씬 그래프를 가지며, 추가로 현재 메인씬의 핸들과 같은 게임 내 전역변수와 같은 존재들을 퍼시스턴트가 가진다.
+게임(혹은 에디터도 하나의 게임으로 봐서)의 설정이나 씬이 전환되어도 유지되길 원하는 오브젝트들을 이 씬에 귀속시킨다.
 
-스크립트는 다음과 같은 일들을 해야 한다.
-- 지연변수로서 커스텀 패러미터들을 정의한다.
-- 커스텀 이벤트 디스패처들을 정의한다.
-- 
+메모리에 올라와 있는 기간이 길다.
+따라서 씬의 용량은 매우 작고 스택기반으로 할당되며 캐시 최적화 가능성도 낮다.
 
-시스템은 각 이벤트 디스패처가 어떤 구독자들을 갖고 있는지에 대한 테이블을 갖고 있다.
+シーンは基本的に1つだけがメモリ上に存在することを前提としているが、オープンワールドのようにシーンストリーミング技法を用いる場合、複数のシーンがメモリ上に存在することもあり得る。
+シーンマネージャーがシーンを切り替えると、他の下位マネージャーはシーンに記述された通りにオブジェクトをメモリにロードしたりアンロードしたりする。
+各マネージャーは自分が属するワールド（イベントシステム）を通して現在アクティブなシーンを把握でき、オブジェクトが上がったり下がったりすることで参照関係が更新されることをシーンにリアルタイムで反映する。
+アクティブなシーンはシーングラフを含め、各マネージャーから報告されるすべての参照関係情報を常に最新の状態に保っておく必要があり、シーンをファイルとして保存する際にはコンポーネントのパラメータ初期値をすべて調査してシーンに書き込む。
 
+パーシステントシーンは常にアクティブで、プレイ中ずっとメモリに常駐するデータを管理する。
+1つのワールドには必ずパーシステントシーンが1つ存在し、シーンマネージャーのコンストラクタで生成される。
+パーシステントもシーングラフを持ち、さらに現在のメインシーンのハンドルやゲーム内グローバル変数のような存在を保持する。
+ゲーム（あるいはエディターも1つのゲームと見なす）設定やシーン切り替え後も維持したいオブジェクトは、このシーンに属させる。
 
-스크립트는 시스템들을 구독자들을 등록해야 한다.
-
-
-
-
-# Systems
-
-시스템은 다음과 같은 메소드들을 매 프레임 호출한다.
-
-- event collector
-- event handler (콜백, 진입, 스크립트에서 구현, 커맨드빌더를 호출, On으로 시작하는 이름 많음)
-- command builder (이벤트핸들러가 호출, 일반적인 메소드 이름)
-- command executor
-
-총 네 층위의 메소드를 가진다. 이 네 층위는 한 루프의 4등분이기도 하다. 이벤트핸들과 커맨드생성을 생략하여 여러 시나리오를 디자이너에게 노출되지 않게 할 수도 있다.
-
-두 개의 일을 한다.
-1. detection: 매 프레임마다 스크립트/컴포넌트들을 돌며 일일이 이벤트를 판단해서 이벤트 객체들을 모은다
-2. 이 이벤트에 맞게 시스템에 미리 정의된 이벤트 발신용 콜백(=이벤트 핸들러)을 이벤트 객체들마다 호출하고, 이 콜백에 반응하는 스크립트/컴포넌트에 등록된(커스텀 이벤트 디스패처들이 소유한) 구독자 리스트를 통해 이벤트를 커맨드(들)로 변환해 시스템 내부의 커맨드큐에 쌓는다.
-3. resolution: 매 프레임마다 커맨드큐를 처리하여 스크립트/컴포넌트, 리소스/프리미티브의 파라미터 및 데이터의 값을 업데이트하거나 값을 참조하여 일을 한다.
-
-이때 일을 하는 구체적인 알고리즘들도 시스템 내부에 구현되어 있다.
-리소스/프리미티브의 데이터가 바뀌는 경우는 물리, 애니, 에디터 내 수정툴 정도 말고는 거의 없는 특수한 상황이기 때문에, 시스템은 주로 스크립트/컴포넌트의 파라미터 값을 참조하거나 갱신하는 일을 한다.
-
-중앙스케줄러는 일을 처리함과 동시에 undo-redo 스택에도 일을 기록한다.
-
-
-
-
-스크립트/컴포넌트의 타입이 어떤 시스템에 반응해야 하는지를 판단한다.
-
-## Render
-컬링 최적화 포함?
-
-## Collision
-
-## Animation
-
-## Visial effect
-
-## Audio
-
-## Input
+メモリ上に存在する期間が長いため、シーンの容量は非常に小さく、スタックベースで割り当てられ、キャッシュ最適化の可能性も低い。
 
 
-인풋시스템은 GLFW에서 콜백이나 폴링으로 받은 인풋을 이벤트화하여 
+### Entities
 
-구체적인 해야 할 일이 적힌 커맨드로 바꾸어 각 시스템이나 매니저로 뿌리는 일?, 즉 이벤트시스템인가?
+### Components
 
-Command pattern...
-
-### Event vs Command vs Task
-Event: 무언가가 발생했다는 사실을 알림
-- 'Ctrl + C' 키가 눌렸다
-- 마우스 왼쪽 버튼이 눌렸다
-- 충돌이 발생했다
-- 애니메이션이 끝났다
-
-Command: 무언가를 하라는 지시
-- 'Ctrl + C' 키가 눌렸으니 복사해라
-- 마우스 왼쪽 버튼이 눌렸으니 오브젝트를 선택
-- 충돌이 발생했으니 반응해라
-- 애니메이션이 끝났으니 다음 애니메이션 재생
-
-Task: 주로 비동기적이나 지연적 작업을 처리하기 위한 단위. 코루틴, 리소스 로딩, 게임 루프에서의 예약 실행?
-
-processEvent는 인풋시스템이나 충돌시스템이 이벤트를 받아서 커맨드로 바꾸는 일이다.
-해당 일을 해야 하는 시스템이나 매니저에 커맨드를 보내는 일이다.
-만약 비동기적인 처리를 해야 하는 커맨드의 경우, 태스크라는 래퍼로 감싸서
-
-executeCommand: 커맨드를 받아서 실제로 무언가를 하는 일
+### Resources
 
 
-# Editor
+
+
+
+
+
+
+
+
+
+
+
+## 2.3. Systems
+
+스크립트/컴포넌트의 타입에 따라 어떤 시스템이 접근가능한지가 결정된다.
+
+### Render
+
+### Collision
+
+### Animation
+
+### Visial effect
+
+### Audio
+
+### Input
+
+
+
+# 3. Editor
+
+
+Input: assets(prefabs, resources, secenes, scripts, etc.)
+Output: executable, data(assets in runtime, cache, logs, etc.)
 
 
 ## Editor specific systems
 
 씬 편집(계층, 인스펙터, 기즈모)
+
 시각화(ui, camera)
+
 에셋 관리(프로젝트, 브라우저, 아웃트로)
-undo-redo, 
 
+undo-redo
 
-우선순위: ui, 계층, 인스펙터, 
-
-# Debugger
-
+우선순위: ui, 계층, 인스펙터
 
 
 
 
-
----
-
----
-
-##
-
-외부 구현: 생성자, 소멸자
-내부 구현: setter, getter
-
-기본적으로 type_index를 인자로 받는 메소드는 find !end 예외처리 고려할 것
-
-
-unique_ptr 멤버: 외부 공유할 생각 없을 때
-
-
-
-
-## 코어 클래스들
-
-
-### Handle
-weak_ptr를 대신함
-논리적으로 반드시 필요하다기보다는 성능(카운팅, 지역성)과 타입 및 스레딩 안정성 면 등 여러 모로 유리하기 때문에 도입
-lock() 개념도 없애서 매니저를 통해서만 접근이 가능하도록 제한하여 설계하였음
-
-
-### Manager
-create과 destroy만 담당, 개별 setter/getter 없지만 forEach와 access가 있음
-forEach는 pool 정보를 갖고 pool 내를 포문 돎.
-system과 다르게(?) 직접 
-
-
-## 메소드 네이밍
-
-### register
-type_index를 이용한 동적 작동 금지, 템플릿을 이용한 정적 작동만 허용하는 void 메소드를 위한 네이밍.
-예를 들어 컨텍스트가 매니저 등록할 때와 매니저가 타입 등록할 때.
-팩토리로 동적으로 생성하지 않음.
-
-### access
-스마트포인터로 관리되고 있는 것들의 로포인터를 반환. 수명신경쓰지 않아도 되는 단순 참조용이지만 handle을 반환하는 경우보다 훨씬 강력.
-
-### get
-매니저를 겟할 땐 스마트포인터로 관리되고 있는 것들을 dynamic_pointer_cast 없는 weak_ptr로 반환.
-오브젝트를 겟할 땐 직접 관리되고 있는 것들의 handle 반환.
-동적 정적 둘 다 만들 것.
-
-그외에 아이디나 이름이나 타입리스트와 같은 것들 반환.
-
-### add
-매니저가 create하면서 access로 초기화하고 get으로 handle 반환.
-register와 달리 이름이 필요한 오브젝트들에게 사용.
-매니저는 add하지 않음.
-동적 정적 둘 다 만들 것.
-
-### load
-add로 create할 때 초기화용 함수들
-
-
-##
-
-### Module
-
-static generateManager()가 존재하는 Object의 자식 클래스들
-아직 requires 등은 구현하지 않음
-
-### Type (Concrete)
-
-static getTypeName()가 존재하는 Object의 자식 클래스들
-
-## 소유관계
-
-Entity
-
-
-
-
+<!--
 
 ## VisitorBase pattern for window rendering
 
@@ -404,7 +608,7 @@ std::unordered_map<std::type_index, std::function<void(Base*)>>
 ```c++
 std::unordered_map<std::type_index, Base> map;
 for (const auto& [type, object] : map) {
-    // do something with type and value
+	// do something with type and value
 }
 ```
 `type`이 가리키는 클래스 `Derived`가 추상클래스 `Base`의 파생클래스일 때, 런타임타입정보 `type`으로 순회하는 경우 `Base`가 가진 가상함수로 `Derived`의 멤버변수에 접근할 수 없다.
@@ -451,3 +655,6 @@ for (const auto& [type, object] : map) {
 
 - 씬 전환
 - 멀티스레드 파이프라인 구조로 점진적 전환
+
+
+-->

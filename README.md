@@ -1,5 +1,9 @@
 
 
+I used Chatgpt with copying and pasting codes fewer than 10 lines for convenience.
+
+
+
 # Game
 Input: assets(prefabs, resources, secenes, scripts, etc.)
 Output: executable, data(assets in runtime, cache, logs, etc.)

@@ -1,9 +1,8 @@
 #pragma once
-#include "allocator.h"
 // 재사용이 불규칙적이고, 크기가 동적으로 변하며, 순회보다는 개별 접근이 많은 경우, 단발성 임시 리소스 등에 적합.
 
 template <typename ObjectType>
-class FreeList : public Allocator {
+class FreeListAllocator final {
 	static_assert(std::is_base_of_v<Object, ObjectType> && !std::is_abstract_v<ObjectType>);
 	std::vector<std::optional<ObjectType>> objects;
 	std::vector<uint32_t> generations;

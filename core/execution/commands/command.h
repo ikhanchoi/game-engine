@@ -1,5 +1,5 @@
 #pragma once
-#include "command_base.h"
+#include "../command_base.h"
 
 class Command final : public CommandBase {
 public:

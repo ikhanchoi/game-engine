@@ -6,54 +6,61 @@ template <typename T>
 struct Tree {
 	struct Node {
 		T value; // every value should be unique.
-		Node* _parent; // may be nullptr.
-		std::vector<Node*> _children; // may be empty, but never has nullptr.
-	}* _root;
-	explicit Tree(const T& value) : _root(_new(value)) {} // every tree is non-empty
+		Node* parent; // may be nullptr.
+		std::vector<Node*> children; // may be empty, but never has nullptr.
+	}* root;
+	explicit Tree(const T& value) : root(_new(value)) {} // every tree is non-empty
 
-	bool add(const T& value, const T& parent) {
-		auto* _parent = _find(parent);
-		if (_find(value) || !_parent) // TODO: can be optimized.
+	bool add(const T& value, const T& parentValue) {
+		auto* parent = _find(parentValue);
+		if (_find(value) || !parent) // TODO: can be optimized.
 			return false; // TODO: custom error type
 
-		if (!_root)
-			_root = _new(value);
+		if (!root)
+			root = _new(value);
 		else
-			_attach(_new(value), _parent);
+			_attach(_new(value), parent);
 		return true;
 	}
 
 	bool remove(const T& value) {
-		auto* _node = _find(value);
-		if (!_node)
+		auto* node = _find(value);
+		if (!node)
 			return false;
-		_detach(_node);
-		_delete(_node);
+		_detach(node);
+		_delete(node);
 		return true;
 	}
-	bool move(const T& value, const T& parent) {
-		auto* _node = _find(value);
-		auto* _parent = _find(parent);
-		if (!_node || !_parent || _find(_parent->value, _node))
+
+	bool move(const T& value, const T& parentValue) {
+		auto* node = _find(value);
+		auto* parent = _find(parentValue);
+		if (!node || !parent || _find(parent->value, node))
 			return false;
-		_detach(_node);
-		_attach(_node, _parent);
+		_detach(node);
+		_attach(node, parent);
 		return true;
 	}
+
+	template <typename Function>
+	void traverse(Function&& function) {
+		_traverse(root, std::forward<Function>(function));
+	}
+
 	void reorder() {} // TODO
 
 private:
 	// every node in arguments should not be nullptr.
 	Node* _find(const T& value) {
-		return _find(value, _root);
+		return _find(value, root);
 	}
 
-	Node* _find(const T& value, Node* _node) {
-		if (_node->value == value)
-			return _node;
-		for (auto* _child : _node->_children)
-			if (auto* _found = _find(value, _child))
-				return _found;
+	Node* _find(const T& value, Node* node) {
+		if (node->value == value)
+			return node;
+		for (auto* child : node->children)
+			if (auto* found = _find(value, child))
+				return found;
 		return nullptr;
 	}
 
@@ -61,42 +68,67 @@ private:
 		return new Node{value, nullptr, {}};
 	}
 
-	void _attach(Node* _node, Node* _parent) {
-		_node->_parent = _parent;
-		_parent->_children.push_back(_node);
+	void _attach(Node* node, Node* parent) {
+		node->parent = parent;
+		parent->children.push_back(node);
 	}
 
-	void _detach(Node* _node) {
-		auto* _parent = _node->_parent;
-		if (_parent == nullptr) // root
+	void _detach(Node* node) {
+		auto* parent = node->parent;
+		if (parent == nullptr) // root
 			return;
-		auto& _siblings = _parent->_children;
-		_siblings.erase(std::remove(_siblings.begin(), _siblings.end(), _node), _siblings.end());
-		_node->_parent = nullptr;
+		auto& siblings = parent->children;
+		siblings.erase(std::remove(siblings.begin(), siblings.end(), node), siblings.end());
+		node->parent = nullptr;
 	}
 
-	void _delete(Node* _node) {
-		for (auto* _child : _node->_children)
-			_delete(_child);
-		_node->_children.clear();
-		if (_node == _root)
-			_root = nullptr;
-		delete _node;
+	void _delete(Node* node) {
+		for (auto* child : node->children)
+			_delete(child);
+		node->children.clear();
+		if (node == root)
+			root = nullptr;
+		delete node;
+	}
+
+	template <typename Function>
+	void _traverse(Node* node, Function&& function) {
+		function(node->value);
+		for (auto* child : node->children)
+			_traverse(child, std::forward<Function>(function));
 	}
 };
 
 template <typename T>
 struct Forest {
-	std::vector<Tree<T>*> _trees;
+	std::vector<Tree<T>*> trees;
 
 	bool add(const T& value, std::optional<std::reference_wrapper<const T>> parent = std::nullopt) {
 		if (!parent.has_value()) {
-			_trees.emplace_back(new Tree<T>(value));
+			trees.emplace_back(new Tree<T>(value));
 			return true;
 		}
-		for (auto* _tree : _trees)
-			if (_tree->add(value, parent->get()))
+		for (auto* tree : trees)
+			if (tree->add(value, parent->get()))
 				return true;
 		return false;
+	}
+
+	bool remove(const T& value) {
+		for (auto* tree : trees)
+			if (tree->remove(value)) {
+				if (tree->root == nullptr) {
+					trees.erase(std::remove(trees.begin(), trees.end(), tree), trees.end());
+					delete tree;
+				}
+				return true;
+			}
+		return false;
+	}
+
+	template <typename Function>
+	void traverse(Function&& function) {
+		for (auto* tree : trees)
+			tree->traverse(std::forward<Function>(function));
 	}
 };

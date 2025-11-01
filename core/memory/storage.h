@@ -1,29 +1,26 @@
 #pragma once
-#include "allocators/allocator.h"
+#include "allocators/allocator_concept.h"
 
-template <typename ObjectType>
+template <typename ObjectType, typename ConcreteAllocatorType>
+requires AllocatorConcept<ConcreteAllocatorType, ObjectType>
 class Storage {
-	std::unique_ptr<Allocator<ObjectType>> allocator;
-
-	explicit Storage(std::unique_ptr<Allocator<ObjectType>> allocator) : allocator(std::move(allocator)) {}
+	ConcreteAllocatorType allocator;
 
 public:
-	template <template <typename> class AllocatorType>
-	static Storage make(size_t initialCapacity = 64) {
-		return Storage(std::make_unique<AllocatorType<ObjectType>>(initialCapacity));
-	}
+	explicit Storage(size_t initialCapacity = 64) : allocator(initialCapacity) {}
 
-	Handle<ObjectType> create() { return allocator->create(); }
-	Storage clone() { return Storage(allocator->clone()); }
-	void destroy(Handle<ObjectType> handle) { allocator->destroy(handle); }
+	Handle<ObjectType> create() { return allocator.create(); }
+	std::unique_ptr<Storage> clone() { return std::make_unique<Storage>(allocator.clone()); }
+	void destroy(Handle<ObjectType> handle) { allocator.destroy(handle); }
 	void clear() { allocator->clear(); }
 
-	bool valid(Handle<ObjectType> handle) { return allocator->valid(handle); }
-	ObjectType* resolve(Handle<ObjectType> handle) { return allocator->resolve(handle); }
-	std::vector<Handle<ObjectType>> view() { return allocator->view(); }
-	void each(std::function<void(ObjectType*)> function) { allocator->each(function); }
+	bool valid(Handle<ObjectType> handle) { return allocator.valid(handle); }
+	ObjectType* resolve(Handle<ObjectType> handle) { return allocator.resolve(handle); }
+	std::vector<Handle<ObjectType>> view() { return allocator.view(); }
+	template <typename Function>
+	void each(Function&& function) { allocator.each(std::forward<Function>(function)); }
 
-/* TODO:
+/* TODO: allocator_concept
 	void serialize(std::ostream& out) const { allocator->serialize(out); }
 	void deserialize(std::istream& in) { allocator->deserialize(in);}
 	size_t size() const { return allocator->size(); }

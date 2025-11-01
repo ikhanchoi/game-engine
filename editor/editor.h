@@ -1,5 +1,5 @@
 #pragma once
-#include "game/world.h"
+#include "world/world.h"
 
 class Editor {
 	class GLFWwindow* glfwWindow;

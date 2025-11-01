@@ -1,9 +1,7 @@
 #pragma once
-#include "allocator.h"
 
 template <typename ObjectType>
-class NaiveAllocator final : public AllocatorCRTP<ObjectType, NaiveAllocator> {
-	friend class AllocatorCRTP<ObjectType, NaiveAllocator>;
+class NaiveAllocator final {
 	std::vector<ObjectType*> objects;
 	std::vector<uint16_t> refCounts; // TODO: implement this, also on pool and freelist.
 public:
@@ -11,10 +9,9 @@ public:
 		objects.reserve(initialCapacity);
 		refCounts.reserve(initialCapacity);
 	}
-	~NaiveAllocator() override { clear(); }
+	~NaiveAllocator() { clear(); }
 
-protected:
-	Handle<ObjectType> create() override {
+	Handle<ObjectType> create() {
 		if (objects.size() >= std::numeric_limits<uint32_t>::max())
 			throw std::runtime_error("Error: (Naive<" + std::string(typeid(ObjectType).name()) +">::allocate) Pool size limit reached.");
 		auto id = static_cast<uint32_t>(objects.size());
@@ -22,7 +19,7 @@ protected:
 		objects.push_back(object);
 		return Handle<ObjectType>(id, 0);
 	}
-	std::unique_ptr<Allocator<ObjectType>> clone() override {
+	NaiveAllocator& clone() {
 		if constexpr (!std::is_copy_constructible_v<ObjectType>)
 			throw std::runtime_error("Error: (Naive<" + std::string(typeid(ObjectType).name()) + ">::clone) ObjectType is not copy constructible.");
 		auto newNaive = std::make_unique<NaiveAllocator>(objects.capacity());
@@ -38,14 +35,14 @@ protected:
 		}
 		return newNaive;
 	}
-	void destroy(Handle<ObjectType> handle) override {
+	void destroy(Handle<ObjectType> handle) {
 		if (!valid(handle))
 			throw std::runtime_error("Invalid or stale handle.");
 		uint32_t id = handle.id;
 		delete objects[id];
 		objects[id] = nullptr;
 	}
-	void clear() override {
+	void clear() {
 		for (auto& object : objects)
 			delete object;
 		objects.clear();
@@ -53,7 +50,7 @@ protected:
 	}
 
 
-	bool valid(Handle<ObjectType> handle) override {
+	bool valid(Handle<ObjectType> handle) {
 		if (handle.id >= objects.size())
 			return false;
 		if (handle.generation > 0)
@@ -64,12 +61,12 @@ protected:
 
 		return handle.id < objects.size() && handle.generation == 0 && objects[handle.id] != nullptr;
 	}
-	ObjectType* resolve(Handle<ObjectType> handle) override {
+	ObjectType* resolve(Handle<ObjectType> handle) {
 		if (!valid(handle))
 			throw std::runtime_error("Invalid or stale handle.");
 		return objects[handle.id];
 	}
-	std::vector<Handle<ObjectType>> view() override {
+	std::vector<Handle<ObjectType>> view() {
 		std::vector<Handle<ObjectType>> handles;
 		for (uint32_t i = 0; i < objects.size(); ++i)
 			if (objects[i])
@@ -77,11 +74,10 @@ protected:
 		return handles;
 	}
 	template <typename Function>
-	void _each(Function&& function) {
+	void each(Function&& function) {
 		for (auto* object : objects)
 			if (object)
 				function(object);
 	}
-
 };
 

@@ -1,10 +1,13 @@
 #include "editor.h"
-#include "editor/systems/ui/ui.h"
-#include "game/objects/entity/entity_manager.h"
-#include "game/objects/scene/scene_manager.h"
+#include "world/scene/scene_manager.h"
+#include "world/entity/entity_manager.h"
+#include "editor/ui/ui_system.h"
+#include "editor/ui/panel/hierarchy/hierarchy_panel.h"
+#include "editor/ui/panel/inspector/inspector_panel.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+// #include <thread>
 
 Editor::Editor() {
 	glfwInit();
@@ -43,9 +46,8 @@ Editor::~Editor() {
 
 void Editor::loop() {
 	while (!glfwWindowShouldClose(glfwWindow)) {
-		glfwPollEvents();
-
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glfwWaitEventsTimeout(1.0/120.0); // instead of glfwPollEvents for MacOS
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // in render system?
 
 		if (!playWorld) { // edit mode
 			editWorld->update();
@@ -54,17 +56,8 @@ void Editor::loop() {
 
 		}
 
-
-
-		glfwSwapBuffers(glfwWindow);
-
-
-
-
-		// subscribe를 맨 처음에 하는 과정에서 ManagerBase에 순수가상함수를 넣어주는 것이 베스트?
-		// event들을 모니터할 수 있으면 좋겠다.
-		// event 뿐만 아니라 다른 매니저들에 대해서도 전부 모니터링 가능하려나?
-
+		glfwSwapBuffers(glfwWindow); // in render system?
+		// std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 }
 
@@ -72,16 +65,25 @@ void Editor::loop() {
 
 void Editor::initializeEditWorld() {
 	editWorld = std::make_unique<World>();
+
 	editWorld->startup<SceneManager>();
 	editWorld->startup<EntityManager>();
+
 	editWorld->startup<UISystem>();
+	editWorld->startup<InspectorPanel>(typeid(UISystem));
+	editWorld->startup<HierarchyPanel>(typeid(UISystem));
 
 
-	editWorld->update(); // for listener subscription
+
+	editWorld->flush(); // listener subscription
 }
 
 void Editor::terminateEditWorld() {
+
+	editWorld->shutdown<HierarchyPanel>();
+	editWorld->shutdown<InspectorPanel>();
 	editWorld->shutdown<UISystem>();
+
 	editWorld->shutdown<EntityManager>();
 	editWorld->shutdown<SceneManager>();
 	editWorld.reset();

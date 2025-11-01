@@ -8,3 +8,4 @@
 #include <optional>
 #include "core/memory/handle.h"
 #include "core/memory/object.h"
+#include "core/execution/commands/command.h"

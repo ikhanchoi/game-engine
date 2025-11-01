@@ -1,9 +1,7 @@
 #pragma once
-#include "allocator.h"
 
 template <typename ObjectType>
-class PoolAllocator final : public AllocatorCRTP<ObjectType, PoolAllocator> {
-	friend class AllocatorCRTP<ObjectType, PoolAllocator>;
+class PoolAllocator final {
 	std::vector<std::aligned_storage_t<sizeof(ObjectType), alignof(ObjectType)>> objects;
 	std::vector<uint32_t> generations;
     std::vector<uint32_t> frees;
@@ -12,11 +10,10 @@ class PoolAllocator final : public AllocatorCRTP<ObjectType, PoolAllocator> {
 
 public:
 	explicit PoolAllocator(size_t initialCapacity);
-	~PoolAllocator() override;
+	~PoolAllocator();
 
-protected:
-	Handle<ObjectType> create() override;
-	std::unique_ptr<Allocator<ObjectType>> clone() override;
+	Handle<ObjectType> create();
+	std::unique_ptr<Allocator<ObjectType>> clone();
 	void destroy(Handle<ObjectType> handle) override;
 	void clear() override;
 

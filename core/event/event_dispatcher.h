@@ -20,7 +20,10 @@ public:
 
 	void dispatch() {
 		for (auto& event : events) {
-			if (auto it = listeners.find(typeid(*event)); it != listeners.end())
+			if (!event)
+				continue;
+			auto& e = *event;
+			if (auto it = listeners.find(typeid(e)); it != listeners.end())
 				for (auto& handler : it->second)
 					handler(*event);
 		}

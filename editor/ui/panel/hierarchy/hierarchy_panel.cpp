@@ -18,7 +18,10 @@ HierarchyPanel::HierarchyPanel(World& world) : SystemBase(world),
 
 void HierarchyPanel::tick() {
 	ImGui::Begin("Hierarchy");
-
+	if (!sceneManager.getCurrentScene().has_value()) {
+		ImGui::End();
+		return;
+	}
 	for (auto* tree : sceneManager.getSceneGraph()->trees)
 		handleEntity(tree->root);
 

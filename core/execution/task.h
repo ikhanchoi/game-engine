@@ -1,5 +1,5 @@
 #pragma once
-#include <functional>
+
 
 struct Task {
 	std::function<void()> action;

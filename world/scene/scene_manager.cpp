@@ -1,8 +1,8 @@
 #include "scene_manager.h"
-#include "scene.h"
+#include "core/execution/command/command.h"
 #include "persistent_scene.h"
+#include "scene.h"
 #include "scene_events.h"
-#include "core/execution/commands/command.h"
 
 SceneManager::SceneManager(World& world) : ManagerBase(world) {
 	registerStorage<Scene>(); // TODO: naive should be changed to stack
@@ -30,7 +30,7 @@ void SceneManager::saveScene(Handle<Scene> scene, const std::string& path) {
 
 
 void SceneManager::setCurrentScene(std::optional<Handle<Scene>> scene) {
-	submit<Command>([this, scene] {
+	submit([this, scene] {
 		if (currentScene == scene) return;
 		if (scene.has_value() && !valid(scene.value()))
 			throw std::runtime_error("Error: (SceneManager::setCurrentScene) The specified scene is not empty but also not valid.");
@@ -40,7 +40,7 @@ void SceneManager::setCurrentScene(std::optional<Handle<Scene>> scene) {
 }
 
 void SceneManager::setEntityName(Handle<Entity> entity, const std::string& name, std::optional<Handle<Scene>> scene) {
-	submit<Command>([this, entity, name, scene] {
+	submit([this, entity, name, scene] {
 		auto actualScene = scene.has_value() ? scene.value() : currentScene.has_value() ? currentScene.value()
 								: throw std::runtime_error("Error: (SceneManager::getSceneGraph) The current scene is not set.");
 		resolve<Scene>(actualScene)->entityName[entity] = name;
@@ -55,7 +55,8 @@ Handle<Scene> SceneManager::newScene(const std::string& name) {
 		unloadScene(scene);
 	}
 	auto scene = create<Scene>();
-	resolve<Scene>(scene)->name = name.empty() ? name : "Scene " + std::to_string(scene.id);
+	if (!name.empty())
+		resolve<Scene>(scene)->name = name;
 	setCurrentScene(scene);
 	return scene;
 }
@@ -65,7 +66,7 @@ Handle<Scene> SceneManager::newScene(const std::string& name) {
 
 
 
-
+// query responders
 
 Handle<PersistentScene> SceneManager::getPersistentScene() {
 	return *persistentScene;
@@ -93,5 +94,6 @@ const std::string& SceneManager::getEntityName(Handle<Entity> entity, std::optio
 	auto& entityNameMap = resolve<Scene>(scene.value())->entityName;
 	if (entityNameMap.contains(entity))
 		return entityNameMap[entity];
-	return "";
+	static const std::string empty = "";
+	return empty;
 }

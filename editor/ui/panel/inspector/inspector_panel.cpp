@@ -1,5 +1,5 @@
 #include "inspector_panel.h"
-#include "core/execution/commands/command.h"
+#include "core/execution/command/command.h"
 
 #include "include/imgui/imgui.h"
 
@@ -15,7 +15,7 @@ void InspectorPanel::tick() {
 
 
 void InspectorPanel::setSelected(std::optional<Handle<Entity>> entity) {
-	submit<Command>([this, entity] {
+	submit([this, entity] {
 		selected = entity;
 	});
 }

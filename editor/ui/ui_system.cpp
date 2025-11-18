@@ -48,7 +48,7 @@ void UISystem::tick() {
 	ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
 	ImGui::End();
 
-	submit<Command>([] {
+	submit([] {
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	});

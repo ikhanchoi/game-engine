@@ -1,12 +1,4 @@
 
-#include "resource.h"
-
-
-
-
-/*---------------*/
-/* ModelResource */
-/*---------------*/
 
 ModelResource::~ModelResource() {
 	for (const auto &bufferObject: bufferObjects)
@@ -64,10 +56,6 @@ void ModelResource::loadTextureObjects() {
 
 
 
-/*----------------*/
-/* ShaderResource */
-/*----------------*/
-
 
 ShaderResource::~ShaderResource() {
 	glDeleteShader(shaderObject);
@@ -102,7 +90,4 @@ void ShaderResource::loadShader(const std::string& path) {
 		throw std::runtime_error("Error: (ShaderResource::loadShader) Failed to compile shader: " + path + ". " + infoLog);
 	}
 }
-
-
-
 

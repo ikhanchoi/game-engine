@@ -1,6 +1,5 @@
 #pragma once
 
-
 template <ManagerOrSystem Type>
 void World::startup(std::optional<std::type_index> parentType) {
 	if constexpr (std::derived_from<Type, ManagerBase>) {

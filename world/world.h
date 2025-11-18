@@ -8,7 +8,7 @@ concept ManagerOrSystem = std::is_base_of_v<class ManagerBase, Type> || std::is_
 
 class World {
 	std::unordered_map<std::type_index, std::any> storage; // TODO: resolve external fragmentation
-	std::unordered_map<std::type_index, std::unique_ptr<ManagerBase>> manager;
+	std::map<std::type_index, std::unique_ptr<ManagerBase>> manager;
 	std::unordered_map<std::type_index, std::unique_ptr<SystemBase>> system;
 
 	Forest<std::type_index> dependencyGraph; // for systems TODO: DAG

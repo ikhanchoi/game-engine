@@ -1,9 +1,6 @@
 #pragma once
 #include "world/manager_base.h"
 
-class Scene;
-class Entity;
-
 class EntityManager final : public ManagerBase {
 	class SceneManager& sceneManager;
 

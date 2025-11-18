@@ -2,15 +2,7 @@
 #include "world/manager_base.h"
 #include "core/containers/tree.h"
 
-class Scene;
-class PersistentScene;
-
 class SceneManager final : public ManagerBase {
-	// TODO: methods will be distributed to the following subsystems.
-	// std::unique_ptr<SceneLoader>
-	// std::unique_ptr<SceneSerializer> serializer: serialization type like json or binary
-	// std::unique_ptr<SceneStreamer>
-	// etc
 	std::unique_ptr<Handle<PersistentScene>> persistentScene; // TODO: remove unique_ptr
 	std::optional<Handle<Scene>> currentScene;
 
@@ -27,7 +19,8 @@ public:
 	void setCurrentScene(std::optional<Handle<Scene>> scene);
 	void setEntityName(Handle<Entity> entity, const std::string& name, std::optional<Handle<Scene>> scene = std::nullopt); // for editor
 
-	Handle<Scene> newScene(const std::string& name = ""); // for editor, so it is new, not add.
+	// indirect command submitters
+	Handle<Scene> newScene(const std::string& name = ""); // for editor
 
 
 

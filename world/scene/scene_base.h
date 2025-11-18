@@ -3,8 +3,6 @@
 
 #include <bitset>
 
-class Entity;
-class Component;
 
 class SceneBase {
 	friend class EntityManager;
@@ -13,7 +11,7 @@ class SceneBase {
 protected:
 	Forest<Handle<Entity>> sceneGraph;
 	std::unordered_map<Handle<Entity>, std::bitset<64>> componentMask; // dense
-	std::unordered_map<Handle<Entity>, std::unordered_map<std::type_index, Handle<Component>>> componentMap; // sparse, TODO: type-erased handle?
+	std::unordered_map<Handle<Entity>, std::unordered_map<std::type_index, Handle<class Component>>> componentMap; // sparse, TODO: type-erased handle?
 
 	std::unordered_map<Handle<Entity>, std::string> entityName; // for editor
 	//std::unordered_map<Handle<Entity>, enum Icon(?)> entityIcon; // for editor

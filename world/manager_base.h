@@ -1,8 +1,9 @@
 #pragma once
-#include "world.h"
 #include "core/event/event_dispatcher.h"
-#include "core/execution/commands/command_buffer.h"
+#include "core/execution/command/command_buffer.h"
+#include "core/memory/allocators/allocation_policies.h"
 #include "core/memory/storage.h"
+#include "world.h"
 
 #include <any>
 #include <typeindex>
@@ -17,10 +18,10 @@ protected:
 	explicit ManagerBase(World& world) : world(world),
 		eventDispatcher(std::make_unique<EventDispatcher>()), commandBuffer(std::make_unique<CommandBuffer>()) {}
 
-	template <typename EventType, typename ... Args>
+	template <typename EventType, typename... Args>
 	void publish(Args&&... args) { eventDispatcher->publish<EventType>(std::forward<Args>(args)...); }
-	template <typename CommandType, typename... Args>
-	void submit(Args&&... args) { commandBuffer->submit(std::make_unique<CommandType>(std::forward<Args>(args)...)); }
+	template <typename Function>
+	void submit(Function&& perform) { commandBuffer->submit(std::forward<Function>(perform)); }
 
 	template <typename ObjectType>
 	void registerStorage() {

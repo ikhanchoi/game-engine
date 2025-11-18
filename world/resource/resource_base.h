@@ -1,23 +1,20 @@
 #pragma once
+
+
 #include <string>
 #include <fstream>
 #include <sstream>
 
 
-#include <GL/glew.h>
-#include "tiny_gltf.h"
-
 
 class ResourceBase {
-	void* iconTexture = nullptr;
 public:
-	virtual ~ResourceBase() = default;
-	virtual void loadResource(const std::string& path) = 0; // path after ../resources/models/ or ../resources/shaders/
-
-	void* getIconTexture() const { return iconTexture; }
+	virtual ~ResourceBase() = 0;
 };
 
+inline ResourceBase::~ResourceBase() = default;
 
+/*
 class ModelResource : public ResourceBase {
 	tinygltf::Model model;
 	std::vector<GLuint> bufferObjects;
@@ -43,9 +40,6 @@ public:
 
 };
 
-/*
- * RAII is not applied directly in the constructor, but in the adder method of the manager.
- */
 
 // external model
 // primitive model (pbr factor, mesh type, etc.)
@@ -71,7 +65,7 @@ public:
 
 
 };
-/*
+
 class ResourceManager : public PoolManagerBase {
 public:
 	explicit ResourceManager(Context* context) : PoolManagerBase(context) {}

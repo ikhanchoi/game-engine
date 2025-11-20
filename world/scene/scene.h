@@ -6,7 +6,4 @@ class Scene final : public SceneBase, public Object {
 
 	std::string path;
 	std::string name; // for editor
-
-public:
-	explicit Scene(uint32_t id) : Object(id) {}
 };

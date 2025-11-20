@@ -9,7 +9,7 @@ class SceneBase {
 	friend class ComponentManager;
 
 protected:
-	Forest<Handle<Entity>> sceneGraph;
+	Forest<Handle<Entity>> entityGraph;
 	std::unordered_map<Handle<Entity>, std::bitset<64>> componentMask; // dense
 	std::unordered_map<Handle<Entity>, std::unordered_map<std::type_index, Handle<class Component>>> componentMap; // sparse, TODO: type-erased handle?
 

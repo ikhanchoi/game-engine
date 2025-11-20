@@ -3,7 +3,7 @@
 #include "core/containers/tree.h"
 
 class SceneManager final : public ManagerBase {
-	std::unique_ptr<Handle<PersistentScene>> persistentScene; // TODO: remove unique_ptr
+	std::unique_ptr<Handle<Scene>> persistentScene;
 	std::optional<Handle<Scene>> currentScene;
 
 public:
@@ -25,9 +25,9 @@ public:
 
 
 	// query responders
-	Handle<PersistentScene> getPersistentScene();
+	Handle<Scene> getPersistentScene();
 	std::optional<Handle<Scene>> getCurrentScene();
-	Forest<Handle<Entity>>* getSceneGraph(std::optional<Handle<Scene>> scene = std::nullopt);
+	Forest<Handle<Entity>>* getEntityGraph(std::optional<Handle<Scene>> scene = std::nullopt);
 	const std::string& getEntityName(Handle<Entity> entity, std::optional<Handle<Scene>> scene = std::nullopt);
 
 

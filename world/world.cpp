@@ -5,7 +5,7 @@
 void World::flush() {
 
 	// lock_guard necessary
-	dependencyGraph.traverse([this](const std::type_index& type) { system.at(type)->flush(); });
+	systemExecutionGraph.traverse([this](const std::type_index& type) { system.at(type)->flush(); });
 
 	for (auto& [type, manager] : manager)
 		manager->flush();
@@ -27,9 +27,9 @@ void World::update() {
 	}
 */
 
-	dependencyGraph.traverse([this](const std::type_index& type) { system.at(type)->tick(); });
+	systemExecutionGraph.traverse([this](const std::type_index& type) { system.at(type)->tick(); });
 
-	dependencyGraph.traverse([this](const std::type_index& type) { system.at(type)->dispatch(); });
+	systemExecutionGraph.traverse([this](const std::type_index& type) { system.at(type)->dispatch(); });
 
 	for (auto& [type, manager] : manager)
 		manager->dispatch();

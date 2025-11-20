@@ -9,7 +9,7 @@ void World::startup(std::optional<std::type_index> parentType) {
 			throw std::runtime_error("Error: (World::startup) Manager already exists for " + std::string(typeid(Type).name()));
 		manager.emplace(typeid(Type), std::make_unique<Type>(*this));
 	} else {
-		if (!dependencyGraph.add(typeid(Type), parentType))
+		if (!systemExecutionGraph.add(typeid(Type), parentType))
 			throw std::runtime_error("Error: (World::startup) Parent Type does not exists for: " + std::string(typeid(Type).name()));
 		if (system.contains(typeid(Type)))
 			throw std::runtime_error("Error: (World::startup) System already exists for " + std::string(typeid(Type).name()));
@@ -24,7 +24,7 @@ void World::shutdown() {
 			throw std::runtime_error("Error: (World::shutdown) Manager does not exist for " + std::string(typeid(Type).name()));
 		manager[typeid(Type)].reset();
 	} else {
-		if (!dependencyGraph.remove(typeid(Type)))
+		if (!systemExecutionGraph.remove(typeid(Type)))
 			throw std::runtime_error("Error: (World::shutdown) Failed to remove from dependency graph for: " + std::string(typeid(Type).name()));
 		if (!system.contains(typeid(Type)))
 			throw std::runtime_error("Error: (World::shutdown) System does not exist for: " + std::string(typeid(Type).name()));
@@ -33,12 +33,14 @@ void World::shutdown() {
 }
 
 template <ManagerOrSystem Type>
-Type* World::get() {
+Type& World::get() {
 	if constexpr (std::derived_from<Type, ManagerBase>) {
-		if (!manager.contains(typeid(Type))) return nullptr;
-		return static_cast<Type*>(manager[typeid(Type)].get());
+		if (!manager.contains(typeid(Type)))
+			throw std::runtime_error("Error: (World::get) Manager does not exist for " + std::string(typeid(Type).name()));
+		return *static_cast<Type*>(manager[typeid(Type)].get());
 	} else {
-		if (!system.contains(typeid(Type))) return nullptr;
-		return static_cast<Type*>(system[typeid(Type)].get());
+		if (!system.contains(typeid(Type)))
+			throw std::runtime_error("Error: (World::get) System does not exist for " + std::string(typeid(Type).name()));
+		return *static_cast<Type*>(system[typeid(Type)].get());
 	}
 }

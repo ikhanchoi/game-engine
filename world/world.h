@@ -9,9 +9,9 @@ concept ManagerOrSystem = std::is_base_of_v<class ManagerBase, Type> || std::is_
 class World {
 	std::unordered_map<std::type_index, std::any> storage; // TODO: resolve external fragmentation
 	std::map<std::type_index, std::unique_ptr<ManagerBase>> manager;
-	std::unordered_map<std::type_index, std::unique_ptr<SystemBase>> system;
+	std::map<std::type_index, std::unique_ptr<SystemBase>> system;
 
-	Forest<std::type_index> dependencyGraph; // for systems TODO: DAG
+	Forest<std::type_index> systemExecutionGraph; // for systems TODO: DAG
 
 public:
 	void flush();
@@ -22,7 +22,7 @@ public:
 	template <ManagerOrSystem Type>
 	void shutdown();
 	template <ManagerOrSystem Type>
-	Type* get();
+	Type& get();
 
 	// storage access for registration
 	friend class ManagerBase;

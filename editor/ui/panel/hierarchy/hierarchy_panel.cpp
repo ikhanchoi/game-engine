@@ -11,9 +11,9 @@
 
 
 HierarchyPanel::HierarchyPanel(World& world) : SystemBase(world),
-	sceneManager(*world.get<SceneManager>()),
-	entityManager(*world.get<EntityManager>()),
-	inspectorPanel(*world.get<InspectorPanel>()){
+	sceneManager(world.get<SceneManager>()),
+	entityManager(world.get<EntityManager>()),
+	inspectorPanel(world.get<InspectorPanel>()){
 }
 
 void HierarchyPanel::tick() {
@@ -22,7 +22,7 @@ void HierarchyPanel::tick() {
 		ImGui::End();
 		return;
 	}
-	for (auto* tree : sceneManager.getSceneGraph()->trees)
+	for (auto* tree : sceneManager.getEntityGraph()->trees)
 		handleEntity(tree->root);
 
 	ImGui::InvisibleButton("##invisible", ImGui::GetContentRegionAvail());

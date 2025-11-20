@@ -18,6 +18,7 @@ public:
 	ObjectType* resolve(Handle<ObjectType> handle) { return allocator.resolve(handle); }
 	std::vector<Handle<ObjectType>> view() { return allocator.view(); }
 	template <typename Function>
+	requires std::is_base_of_v<ComponentBase, ObjectType>
 	void each(Function&& function) { allocator.each(std::forward<Function>(function)); }
 
 /* TODO: allocator_concept

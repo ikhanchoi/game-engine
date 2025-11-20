@@ -1,9 +1,11 @@
 #pragma once
 #include "world/component/component_base.h"
-#include "world/resource/model_resource.h"
-#include "world/resource/material_resource.h"
+
+class MaterialResource;
+class MaterialInstance;
 
 struct MeshComponent final : ComponentBase, Object {
-	Handle<ModelResource> model;
+	Handle<MeshResource> mesh;
 	Handle<MaterialResource> material;
+	Handle<MaterialInstance> materialInstance;
 };

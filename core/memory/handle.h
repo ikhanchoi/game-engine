@@ -8,6 +8,10 @@ struct Handle {
 	explicit Handle(uint32_t id, uint32_t generation) : id(id), generation(generation) {}
 	bool operator == (const Handle& other) const { return id == other.id && generation == other.generation; }
 	bool operator != (const Handle& other) const { return !(*this == other); }
+
+	template <typename T=ObjectType>
+	requires std::is_same_v<T, class Entity>
+	uint32_t getId() const { return id; }
 };
 
 namespace std {

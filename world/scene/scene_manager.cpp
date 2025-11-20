@@ -1,14 +1,12 @@
 #include "scene_manager.h"
 #include "core/execution/command/command.h"
-#include "persistent_scene.h"
 #include "scene.h"
 #include "scene_events.h"
 
 SceneManager::SceneManager(World& world) : ManagerBase(world) {
 	registerStorage<Scene>(); // TODO: naive should be changed to stack
-	registerStorage<PersistentScene>(); // TODO: singleton allocator?
 
-	persistentScene = std::make_unique<Handle<PersistentScene>>(create<PersistentScene>());
+	persistentScene = std::make_unique<Handle<Scene>>(create<Scene>());
 }
 
 Handle<Scene> SceneManager::loadScene(const std::string& path) {
@@ -68,17 +66,17 @@ Handle<Scene> SceneManager::newScene(const std::string& name) {
 
 // query responders
 
-Handle<PersistentScene> SceneManager::getPersistentScene() {
+Handle<Scene> SceneManager::getPersistentScene() {
 	return *persistentScene;
 }
 
-Forest<Handle<Entity>>* SceneManager::getSceneGraph(std::optional<Handle<Scene>> scene) {
+Forest<Handle<Entity>>* SceneManager::getEntityGraph(std::optional<Handle<Scene>> scene) {
 	if (!scene.has_value()) {
 		if (!getCurrentScene().has_value())
 			throw std::runtime_error("Error: (SceneManager::getSceneGraph) The main scene is not set.");
 		scene = getCurrentScene();
 	}
-	return &resolve<Scene>(scene.value())->sceneGraph;
+	return &resolve<Scene>(scene.value())->entityGraph;
 }
 
 std::optional<Handle<Scene>> SceneManager::getCurrentScene() {

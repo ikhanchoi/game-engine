@@ -70,7 +70,7 @@ void Editor::initializeEditWorld() {
 	editWorld->startup<EntityManager>();
 
 	editWorld->startup<UISystem>();
-	editWorld->startup<InspectorPanel>(typeid(UISystem));
+	editWorld->startup<InspectorPanel>(typeid(UISystem)); // TODO: explicit execution order specification
 	editWorld->startup<HierarchyPanel>(typeid(UISystem));
 
 

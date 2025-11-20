@@ -2,16 +2,15 @@
 
 #include "naive_allocator.h"
 
-template <typename ObjectType>
-struct AllocatorSelector {
-	using type = NaiveAllocator<ObjectType>;
-};
+template <typename ObjectType> struct AllocatorSelector
+	{ using type = NaiveAllocator<ObjectType>; }; // default allocator
 
-class Scene;
-class PersistentScene;
-class Entity;
 
-template <> struct AllocatorSelector<Scene> { using type = NaiveAllocator<Scene>; };
-template <> struct AllocatorSelector<PersistentScene> { using type = NaiveAllocator<PersistentScene>; };
-template <> struct AllocatorSelector<Entity> { using type = NaiveAllocator<Entity>; };
+template <> struct AllocatorSelector<class Scene>
+	{ using type = NaiveAllocator<Scene>; };
+template <> struct AllocatorSelector<class Entity>
+	{ using type = NaiveAllocator<Entity>; };
 
+
+// TODO: make API to set allocation policies for default/custom types
+// TODO: different allocation policies depending on worlds

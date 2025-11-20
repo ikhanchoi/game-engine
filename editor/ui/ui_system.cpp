@@ -10,7 +10,7 @@
 
 
 UISystem::UISystem(World& world) : SystemBase(world),
-	sceneManager(*world.get<SceneManager>()){
+	sceneManager(world.get<SceneManager>()){
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 

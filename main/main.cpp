@@ -1,7 +1,6 @@
 #include "editor/editor.h"
 #include "world/entity/entity_manager.h"
 #include "world/scene/scene_manager.h"
-#include "world/resource/model_resource.h"
 
 #include <chrono>
 #include <iostream>
@@ -25,14 +24,14 @@ int main() {
 	TIME_BLOCK_END(1);
 
 	auto* editWorld = editor->getEditWorld();
-	auto* sceneManager = editWorld->get<SceneManager>();
-	auto* entityManager = editWorld->get<EntityManager>();
+	auto& sceneManager = editWorld->get<SceneManager>();
+	auto& entityManager = editWorld->get<EntityManager>();
 
 
-	auto scene0 = sceneManager->newScene();
-	auto entity0 = entityManager->addEntity();
-	auto entity1 = entityManager->addEntity();
-	entityManager->removeEntity(entity0);
+	auto scene0 = sceneManager.newScene();
+	auto entity0 = entityManager.addEntity();
+	auto entity1 = entityManager.addEntity();
+	entityManager.removeEntity(entity0);
 
 
 	editor->loop();
